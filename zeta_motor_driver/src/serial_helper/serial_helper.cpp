@@ -39,7 +39,7 @@ void SerialHelper::TransmittData()
         uint8_t dir = 0;
         uint8_t vel_byte[2] = {0x00,};
         transmitt_message[transmitt_index++] = LENGTH_MONITORING;
-        transmitt_message[transmitt_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
+        transmitt_message[transmitt_index++] = 0x00; // monotoring mode pid
         transmitt_message[transmitt_index++] = static_cast<uint8_t>(monitoring_mode);
         if(motor1_state.vel_cur > 0.0)
         {
@@ -91,7 +91,6 @@ bool SerialHelper::Run(uint8_t pid)
             SetVelocity();
             ReturnData();
             break;
-        case 
         default:
             com_error = ComError::error_unknown_pid;
             return false;
@@ -190,17 +189,17 @@ float SerialHelper::ByteToFloat(uint8_t byte_h, uint8_t byte_l, int digit)
 {
     if(digit == 1)
     {
-        return ((byte_h << 8) | byte_l) / 10.0f;
+        return (byte_h * 256 + byte_l) / 10.0f;
     }
     else if(digit == 3)
     {
-        return ((byte_h << 8) | byte_l) / 1000.0f;
+        return (byte_h * 256 + byte_l) / 1000.0f;
     }
 }
 
 uint16_t SerialHelper::ByteToUInt16(uint8_t byte_h, uint8_t byte_l)
 {
-    return ((byte_h  << 8) | byte_l);
+    return (byte_h * 256 + byte_l);
 }
 
 void SerialHelper::FloatToBytes(uint8_t* byte_h, uint8_t* byte_l, float src, int digit)

@@ -1,10 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_CONTROLLER_H_
 #define ZETA_MOTOR_DRIVER_CONTROLLER_H_
-
-#include "motor.hpp"
-
 #include <stdint.h>
-
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
 #define MINIMUM_DUTY  80
@@ -13,7 +9,7 @@
 #define PWM_FREQUENCY     5000UL // the most good wave form & performance(min 8cm/s available)
 // #define PWM_FREQUENCY     10000UL
 #define MOTOR_FORWARD      1
-#define MOTOR_BACKWARD     -1
+#define MOTOR_BACKWARD    -1
 #define MOTOR_NEUTRAL      0
 // #define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
@@ -226,7 +222,7 @@ class PidController
         uint16_t  decreasing_time;
         float     maximum_speed;
         float     minimum_speed;
-        float     ppr; // pulse per rotation
+        float     ppr;             // pulse per rotation
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
         bool      runnable;

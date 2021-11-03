@@ -24,32 +24,30 @@ namespace zeta_motor_driver
 {
 class ConfigurationHelper
 {
-    enum class BaudRate : uint8_t
-    {
-        baud_rate_9600 = 0,
-        baud_rate_19200,
-        baud_rate_38400,
-        baud_rate_57600,
-        baud_rate_115200,
-    } 
     public:
         ConfigurationHelper()
         {
             Update();
         }
         ~ConfigurationHelper() {;}
-        uint32_t GetBaudrate()         { return baudrate;}
-        void GetVersion(uint8_t dest[]){ memcpy(dest, version, sizeof(uint8_t) * 2); }
-        void GetError(uint8_t dest[])  { memcpy(dest, last_error, sizeof(uint8_t) * 2); }
-        float GetPGain()               { return p_gain;}
-        float GetIGain()               { return i_gain;}
-        float GetDGain()               { return d_gain;}
-        float GetMaxSpeed()            { return max_speed;}
-        float GetMinSpeed()            { return min_speed;}
-        float GetPPR()                 { return ppr;}
-        float GetWheelRadius()         { return wheel_radius;}
-        uint16_t GetIncreasingTime()   { return increasing_time;}
-        uint16_t GetDecreasingTime()   { return decreasing_time;}
+        uint32_t GetBaudrate() { return baudrate;}
+        void GetVersion(uint8_t dest[])
+        {
+            memcpy(dest, version, sizeof(uint8_t) * 2);
+        }
+        void GetError(uint8_t dest[])
+        {
+            memcpy(dest, last_error, sizeof(uint8_t) * 2);
+        }
+        float GetPGain() { return p_gain;}
+        float GetIGain() { return i_gain;}
+        float GetDGain() { return d_gain;}
+        float GetMaxSpeed() { return max_speed;}
+        float GetMinSpeed() { return min_speed;}
+        float GetPPR() { return ppr;}
+        float GetWheelRadius() { return wheel_radius;}
+        uint16_t GetIncreasingTime() { return increasing_time;}
+        uint16_t GetDecreasingTime() { return decreasing_time;}
         void SetVersion(uint8_t[]);
         void SetError(uint8_t[]);
         void SetPGain(float);
@@ -63,20 +61,19 @@ class ConfigurationHelper
         void SetDecreasingTime(uint16_t);
         void Update();
     private:
-        int32_t  baudrate;
-        uint8_t  version[2];
-        uint8_t  last_error[2];
-        float    p_gain;
-        float    i_gain;
-        float    d_gain;
-        float    max_speed;
-        float    min_speed;
-        float    ppr;
-        float    wheel_radius;
+        int32_t baudrate;
+        uint8_t version[2];
+        uint8_t last_error[2];
+        float p_gain;
+        float i_gain;
+        float d_gain;
+        float max_speed;
+        float min_speed;
+        float ppr;
+        float wheel_radius;
         uint16_t increasing_time;
         uint16_t decreasing_time;
-        
-};/* class ConfigurationHelper */
+}; /* class ConfigurationHelper */
 }/* namespace zeta_motor_driver */
 
 #endif /* ZETA_MOTOR_DRIVER_CONFIGURATION_HELPER_H_ */
