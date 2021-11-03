@@ -21,6 +21,8 @@
 #define POS_DATA_START  4
 #define RETURN_CODE     0x60
 
+#define LENGTH_MONITORING  7
+
 namespace zeta_motor_driver
 {
 class SerialHelper : public ConfigurationHelper
@@ -43,6 +45,18 @@ class SerialHelper : public ConfigurationHelper
     {
         pid_monitoring = 0,
         pid_set_velocity,
+        pid_brake_motor,
+        pid_release_motor,
+        pid_set_version,
+        pid_set_p_gain,
+        pid_set_i_gain,
+        pid_set_d_gain,
+        pid_set_max_speed,
+        pid_set_min_speed,
+        pid_set_ppr,
+        pid_set_wheel_radius,
+        pid_set_increasing_time,
+        pid_set_decreasing_time,
         pid_imu = 61,
         pid_sonar,
         pid_last,
@@ -56,12 +70,12 @@ class SerialHelper : public ConfigurationHelper
         SerialHelper() : stream(COM_PORT)
         {
             ConfigurationHelper::Update();
-            serial_speed = ConfigurationHelper::GetBaudrate();
-            message_index = 0;
-            com_error = ComError::no_error;
+            serial_speed    = ConfigurationHelper::GetBaudrate();
+            message_index   = 0;
+            com_error       = ComError::no_error;
             monitoring_mode = MonitoringMode::monitoring_vel;
             command_receive = false;
-            monitoring = true;
+            monitoring      = true;
         }
         void Begin();
         void ReceiveData();    // from user

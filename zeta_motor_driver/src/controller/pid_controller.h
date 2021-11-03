@@ -9,7 +9,7 @@
 #define PWM_FREQUENCY     5000UL // the most good wave form & performance(min 8cm/s available)
 // #define PWM_FREQUENCY     10000UL
 #define MOTOR_FORWARD      1
-#define MOTOR_BACKWARD    -1
+#define MOTOR_BACKWARD     -1
 #define MOTOR_NEUTRAL      0
 // #define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
@@ -46,7 +46,7 @@ class PidController
             int        dir;
             float      vel_cmd;
             float      vel_cur;
-            float      pps;
+            float      pps;       // pulse per second
             int16_t    duty;
             encoder_t  encoder;
             MotorState state;
@@ -69,14 +69,13 @@ class PidController
             float err_derv;
             float err_pre;
             float err_int_pre;
-            float err_derv_pre;
             Init()
             {
-                kp = kd = ki = err = err_int = err_derv = err_pre = err_int_pre = err_derv_pre = 0.0f;
+                kp = kd = ki = err = err_int = err_derv = err_pre = err_int_pre = 0.0f;
             }
             InitError()
             {
-                err = err_int = err_derv = err_pre = err_int_pre = err_derv_pre = 0.0f;
+                err = err_int = err_derv = err_pre = err_int_pre = 0.0f;
             }
         }pid_t;
 
@@ -103,8 +102,8 @@ class PidController
         void ControlVel() __attribute__((always_inline))
         {
             static uint32_t time_control_pre;
-            uint32_t time_control_cur = millis();
-            float sampling_time = float(time_control_cur - time_control_pre) / 1000.0; // [sec]
+            uint32_t        time_control_cur = millis();
+            float           sampling_time    = float(time_control_cur - time_control_pre) / 1000.0; // [sec]
             
             /* feedback block */
             ChangeDir();
@@ -162,9 +161,7 @@ class PidController
                 motor2.state = MotorState::run;
             }
             time_control_pre = time_control_cur;
-            pid_motor1.err_derv_pre = pid_motor1.err_derv;
             pid_motor1.err_int_pre = pid_motor1.err_int;
-            pid_motor2.err_derv_pre = pid_motor2.err_derv;
             pid_motor2.err_int_pre = pid_motor2.err_int;
             if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
             {
@@ -223,7 +220,7 @@ class PidController
         uint16_t  decreasing_time;
         float     maximum_speed;
         float     minimum_speed;
-        float     ppr;
+        float     ppr; // pulse per rotation
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
         bool      runnable;
