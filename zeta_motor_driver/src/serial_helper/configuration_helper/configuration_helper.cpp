@@ -1,40 +1,40 @@
 #include "configuration_helper.h"
 using namespace zeta_motor_driver;
-
+// TODO: factory initialization -> update parameter EEPROMs to specific values which are saved somewhere else
 void ConfigurationHelper::Update()
 {
     uint8_t baudrate_preset = EEPROM.read(BASE_ADDRESS_BAUDRATE);
     switch(baudrate_preset)
     {
-        case 0:
+        case static_cast<uint8_t>(BaudRate::baud_rate_9600):
             baudrate = 9600L;
             break;
-        case 1:
+        case static_cast<uint8_t>(BaudRate::baud_rate_19200):
             baudrate = 19200L;
             break;
-        case 2:
+        case static_cast<uint8_t>(BaudRate::baud_rate_38400):
             baudrate = 38400L;
             break;
-        case 3:
+        case static_cast<uint8_t>(BaudRate::baud_rate_57600):
             baudrate = 57600L;
             break;
-        case 4:
+        case static_cast<uint8_t>(BaudRate::baud_rate_115200):
             baudrate = 115200L;
             break;
         default:
             baudrate = 115200L;
             break;
     }
-    version[0] = EEPROM.read(BASE_ADDRESS_FW_VERSION);
-    version[1] = EEPROM.read(BASE_ADDRESS_FW_VERSION + 0x001);
-    last_error[0] = EEPROM.read(BASE_ADDRESS_LAST_ERROR);
-    last_error[1] = EEPROM.read(BASE_ADDRESS_LAST_ERROR + 0x001);
-    p_gain = (EEPROM.read(BASE_ADDRESS_P_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_P_GAIN)) / 10.0f;
-    i_gain = (EEPROM.read(BASE_ADDRESS_I_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_I_GAIN)) / 10.0f;
-    d_gain = (EEPROM.read(BASE_ADDRESS_D_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_D_GAIN)) / 10.0f;
-    max_speed = (EEPROM.read(BASE_ADDRESS_MAX_SPEED + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_MAX_SPEED)) / 1000.0f;
-    min_speed = (EEPROM.read(BASE_ADDRESS_MIN_SPEED + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_MIN_SPEED)) / 1000.0f;
-    ppr = (EEPROM.read(BASE_ADDRESS_PPR + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_PPR)) / 10.0f;
+    version[0]      = EEPROM.read(BASE_ADDRESS_FW_VERSION);
+    version[1]      = EEPROM.read(BASE_ADDRESS_FW_VERSION + 0x001);
+    last_error[0]   = EEPROM.read(BASE_ADDRESS_LAST_ERROR);
+    last_error[1]   = EEPROM.read(BASE_ADDRESS_LAST_ERROR + 0x001);
+    p_gain          = (EEPROM.read(BASE_ADDRESS_P_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_P_GAIN)) / 10.0f;
+    i_gain          = (EEPROM.read(BASE_ADDRESS_I_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_I_GAIN)) / 10.0f;
+    d_gain          = (EEPROM.read(BASE_ADDRESS_D_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_D_GAIN)) / 10.0f;
+    max_speed       = (EEPROM.read(BASE_ADDRESS_MAX_SPEED + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_MAX_SPEED)) / 1000.0f;
+    min_speed       = (EEPROM.read(BASE_ADDRESS_MIN_SPEED + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_MIN_SPEED)) / 1000.0f;
+    ppr             = (EEPROM.read(BASE_ADDRESS_PPR + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_PPR)) / 10.0f;
     increasing_time = (EEPROM.read(BASE_ADDRESS_INCREASING_TIME + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_INCREASING_TIME));
     decreasing_time = (EEPROM.read(BASE_ADDRESS_DECREASING_TIME + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_DECREASING_TIME));
 }
