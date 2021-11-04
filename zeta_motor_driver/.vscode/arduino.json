@@ -1,5 +1,5 @@
 {
     "board": "arduino:avr:mega",
-    "port": "COM10",
+    "port": "COM13",
     "sketch": "zeta_motor_driver.ino"
 }

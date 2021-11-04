@@ -28,40 +28,47 @@ void SerialHelper::ReceiveData()
     }
 }
 
-void SerialHelper::TransmittData()
+void SerialHelper::TransmittVelocity()
 {
     uint8_t transmitt_message[TX_BUFFER_SIZE] = {0x00,};
     int     transmitt_index = 0;
-    transmitt_message[transmitt_index++] = START_BYTE1;
-    transmitt_message[transmitt_index++] = START_BYTE2;
+    uint8_t dir = 0;
+    uint8_t vel_byte[2] = {0x00,};
     if(monitoring)
-    {   
-        uint8_t dir = 0;
-        uint8_t vel_byte[2] = {0x00,};
+    {
+        transmitt_message[transmitt_index++] = START_BYTE1;
+        transmitt_message[transmitt_index++] = START_BYTE2;
         transmitt_message[transmitt_index++] = 7;
-        transmitt_message[transmitt_index++] = 0x00; // monotoring mode pid
-        transmitt_message[transmitt_index++] = static_cast<uint8_t>(monitoring_mode);
-        if(motor1_state.vel_cur > 0.0)
+        if(monitoring_mode == MonitoringMode::monitoring_vel)
         {
-            dir |= 0b01;
+            transmitt_message[transmitt_index++] = static_cast<uint8_t>(MonitoringMode::monitoring_vel); // monotoring mode pid
+            transmitt_message[transmitt_index++] = static_cast<uint8_t>(monitoring_mode);
+            if(motor1_state.vel_cur > 0.0)
+            {
+                dir |= 0b01;
+            }
+            if(motor2_state.vel_cur > 0.0)
+            {
+                dir |= 0b10;
+            }
+            transmitt_message[transmitt_index++] = dir;
+            ConfigurationHelper::FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor1_state.vel_cur,3);
+            transmitt_message[transmitt_index++] = vel_byte[1];
+            transmitt_message[transmitt_index++] = vel_byte[0];
+            ConfigurationHelper::FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor2_state.vel_cur,3);
+            transmitt_message[transmitt_index++] = vel_byte[1];
+            transmitt_message[transmitt_index++] = vel_byte[0];
+            transmitt_message[transmitt_index] = Checksum(&(transmitt_message[POS_LENGTH]), transmitt_index);
+            transmitt_index++;
+            transmitt_message[transmitt_index++] = END_BYTE1;
+            transmitt_message[transmitt_index++] = END_BYTE2;
         }
-        if(motor2_state.vel_cur > 0.0)
+        else if(monitoring_mode == MonitoringMode::monitoring_rpm)
         {
-            dir |= 0b10;
+
         }
-        transmitt_message[transmitt_index++] = dir;
-        FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor1_state.vel_cur,3);
-        transmitt_message[transmitt_index++] = vel_byte[1];
-        transmitt_message[transmitt_index++] = vel_byte[0];
-        FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor2_state.vel_cur,3);
-        transmitt_message[transmitt_index++] = vel_byte[1];
-        transmitt_message[transmitt_index++] = vel_byte[0];
-        transmitt_message[transmitt_index] = Checksum(&(transmitt_message[POS_LENGTH]), transmitt_index);
-        transmitt_index++;
-    }
-    transmitt_message[transmitt_index++] = END_BYTE1;
-    transmitt_message[transmitt_index++] = END_BYTE2;
-    stream.write(transmitt_message,transmitt_index);
+        stream.write(transmitt_message,transmitt_index);
+    }   
 }
 
 void SerialHelper::ExecuteCommand()
@@ -87,7 +94,7 @@ bool SerialHelper::Run(uint8_t pid)
 {
     switch(static_cast<ParameterID>(pid))
     {
-        case ParameterID::pid_set_velocity:
+        case ParameterID::pid_run_motor:
             SetVelocity();
             ReturnData();
             break;
@@ -111,8 +118,8 @@ void SerialHelper::SetVelocity()
     {
         dir2 = MOTOR_FORWARD;
     }
-    motor1_state.vel_cmd = ByteToFloat(receive_message[7], receive_message[8], 3) * float(dir1);
-    motor2_state.vel_cmd = ByteToFloat(receive_message[5], receive_message[6], 3) * float(dir2);
+    motor1_state.vel_cmd = ConfigurationHelper::BytesToFloat(receive_message[7], receive_message[8], 3) * float(dir1);
+    motor2_state.vel_cmd = ConfigurationHelper::BytesToFloat(receive_message[5], receive_message[6], 3) * float(dir2);
 #ifdef SERIAL_DEBUG
     Serial.print("cmd vel: ");Serial.print(motor1_state.vel_cmd,3);Serial.print(", ");Serial.println(motor2_state.vel_cmd,3);
 #endif
@@ -183,44 +190,6 @@ bool SerialHelper::VerifyChecksum()
         return false;
     }
     return true;
-}
-
-float SerialHelper::ByteToFloat(uint8_t byte_h, uint8_t byte_l, int digit)
-{
-    if(digit == 1)
-    {
-        return (byte_h * 256 + byte_l) / 10.0f;
-    }
-    else if(digit == 3)
-    {
-        return (byte_h * 256 + byte_l) / 1000.0f;
-    }
-}
-
-uint16_t SerialHelper::ByteToUInt16(uint8_t byte_h, uint8_t byte_l)
-{
-    return (byte_h * 256 + byte_l);
-}
-
-void SerialHelper::FloatToBytes(uint8_t* byte_h, uint8_t* byte_l, float src, int digit)
-{
-    uint16_t two_bytes;
-    src = fabs(src);
-    if(digit == 1)
-    {
-        two_bytes = uint16_t(src * 10.0f);
-    }
-    else if(digit == 3)
-    {
-        two_bytes = uint16_t(src * 1000.0f);
-    }
-    UInt16ToBytes(byte_h, byte_l, two_bytes);
-}
-
-void SerialHelper::UInt16ToBytes(uint8_t* byte_h, uint8_t* byte_l, uint16_t src)
-{
-    *byte_l = src & 0x00ff;
-    *byte_h = (src & 0xff00) >> 8;
 }
 
 uint8_t SerialHelper::Checksum(uint8_t data[], int length)

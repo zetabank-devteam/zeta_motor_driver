@@ -175,20 +175,20 @@ class PidController
             }
             if(runnable && (motor1.state != MotorState::brake && motor2.state != MotorState::brake))
             {
-                Timer3.pwm(motor1.pwm_pin,abs(motor1.duty));
-                Timer1.pwm(motor2.pwm_pin,abs(motor2.duty));
+                Timer1.pwm(motor1.pwm_pin,abs(motor1.duty));
+                Timer3.pwm(motor2.pwm_pin,abs(motor2.duty));
             }
             else
             {
-                Timer3.pwm(motor1.pwm_pin, 0);
-                Timer1.pwm(motor2.pwm_pin, 0);
+                Timer1.pwm(motor1.pwm_pin, 0);
+                Timer3.pwm(motor2.pwm_pin, 0);
                 pid_motor1.InitError();
                 pid_motor2.InitError();
             }
-            // Serial1.print(motor1.vel_cmd);Serial1.print(", ");Serial1.print(motor1.vel_cur);Serial1.print(", ");
             //Serial1.println(motor1.duty / 500.0f);
             // Serial.print(motor1.duty);Serial.print(", ");Serial.println(motor2.duty);
             // Serial.print(motor1.vel_cmd,3);Serial.print(", ");Serial.println(motor1.vel_cur,3);
+            Serial.print(motor1.vel_cur,3);Serial.print(", ");Serial.println(motor2.vel_cur,3);
             
         }
         void read_encoder1()

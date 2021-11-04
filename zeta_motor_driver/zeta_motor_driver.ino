@@ -21,8 +21,8 @@ void setup() {
     controller.SetPPR(serial_helper.GetPPR());
     controller.SetWheelRadius(serial_helper.GetWheelRadius());
     controller.Begin(motor1, motor2, pid_param);
-    attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin),read_encoder1,CHANGE);
-    attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin),read_encoder2,CHANGE);
+    attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin), read_encoder1, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin), read_encoder2, CHANGE);
     Serial.println("debug begin");
     millis();
     delay(1);
@@ -67,7 +67,7 @@ void TransmittVelocity()
     controller.GetVelocity(vel);
     serial_helper.motor1_state.vel_cur = vel[0];
     serial_helper.motor2_state.vel_cur = vel[1];
-    serial_helper.TransmittData();
+    serial_helper.TransmittVelocity();
     //Serial.print(serial_helper.motor1_state.vel_cur,3);Serial.print(", ");Serial.println(serial_helper.motor2_state.vel_cur,3);
 }
 

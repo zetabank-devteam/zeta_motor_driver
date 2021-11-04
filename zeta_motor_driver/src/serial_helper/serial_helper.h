@@ -44,7 +44,7 @@ class SerialHelper : public ConfigurationHelper
     enum class ParameterID : uint8_t
     {
         pid_monitoring = 0,
-        pid_set_velocity,
+        pid_run_motor,
         pid_brake_motor,
         pid_release_motor,
         pid_set_version,
@@ -80,7 +80,7 @@ class SerialHelper : public ConfigurationHelper
         void Begin();
         void ReceiveData();    // from user
         void ExecuteCommand();
-        void TransmittData();
+        void TransmittVelocity();
         motor_state_t motor1_state;
         motor_state_t motor2_state;
     private:
@@ -97,10 +97,6 @@ class SerialHelper : public ConfigurationHelper
         void     FlushReceiveMessage();
         uint8_t  Checksum(uint8_t[],int);
         bool     Run(uint8_t);
-        float    ByteToFloat(uint8_t,uint8_t,int);
-        uint16_t ByteToUInt16(uint8_t,uint8_t);
-        void     FloatToBytes(uint8_t*,uint8_t*,float,int);
-        void     UInt16ToBytes(uint8_t*,uint8_t*,uint16_t);
         bool     VerifyFormat();
         bool     VerifyLength();
         bool     VerifyChecksum();
