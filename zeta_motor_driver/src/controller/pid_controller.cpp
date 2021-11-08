@@ -28,8 +28,7 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     runnable = true;
 }
 
-PidController::PidController()
-{}
+
 
 void PidController::StopMotor()
 {

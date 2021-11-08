@@ -11,7 +11,7 @@
 #define MOTOR_FORWARD      1
 #define MOTOR_BACKWARD     -1
 #define MOTOR_NEUTRAL      0
-// #define ENABLE_FLOAT_SENSING
+#define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
 
 namespace zeta_motor_driver
@@ -81,7 +81,7 @@ class PidController
 
         motor_t   motor1, motor2;
         
-        PidController();
+        PidController() {}
         ~PidController() {}
         void Begin(motor_t,motor_t,pid_t);
         void SetMotorSpeed(float,float);

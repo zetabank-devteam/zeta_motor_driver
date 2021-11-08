@@ -209,6 +209,11 @@ void SerialHelper::SetVelocity()
 #endif
 }
 
+void SerialHelper::BrakeMotor()
+{
+    
+}
+
 void SerialHelper::ReturnData()
 {
     uint8_t transmitt_message[TX_BUFFER_SIZE] = {0,};
