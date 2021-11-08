@@ -3,9 +3,10 @@
 #include "configuration_helper/configuration_helper.h"
 #include "../controller/pid_controller.h"
 
-#include <ros.h>
 #include <HardwareSerial.h>
 // #define SERIAL_DEBUG
+#define ROS_SERIAL              Serial
+#define DRIVER_COMPORT          Serial1
 #define SERIAL_SPEED            115200 // if too slow, print take too long (print() disables interrupt!)
 #define TX_BUFFER_SIZE          16
 #define RX_BUFFER_SIZE          16
@@ -83,7 +84,7 @@ class SerialHelper : public ConfigurationHelper
         pid_get_param,
         pid_imu = 61,
         pid_sonar,
-        pid_last = 0xff,
+        pid_last,
     };
     enum class MonitoringUnit : uint8_t
     {
@@ -93,7 +94,13 @@ class SerialHelper : public ConfigurationHelper
     };
     
     public:
-        SerialHelper()
+        enum class StreamType : uint8_t
+        {
+            stream_rosserial,
+            stream_comport,
+            stream_last,
+        }
+        SerialHelper(HardwareSerial& stream_, StreamType stream_type_) : stream(stream_), stream_type(stream_type_)
         {
             ConfigurationHelper::Update();
             serial_speed    = ConfigurationHelper::GetBaudrate();
@@ -103,11 +110,11 @@ class SerialHelper : public ConfigurationHelper
             command_receive = false;
             wheel_radius    = ConfigurationHelper::GetWheelRadius();
         }
-        void    Begin();
-        void    ReceiveData();    // from user
-        void    ExecuteCommand();
-        void    TransmitVelocity();
-        void    SetMessage(uint8_t[]);
+        void Begin();
+        void ReceiveData();    // from user
+        void ExecuteCommand();
+        void TransmitVelocity();
+        void SetMessage(uint8_t[]);
         motor_state_t motor1_state;
         motor_state_t motor2_state;
     private:
@@ -118,6 +125,7 @@ class SerialHelper : public ConfigurationHelper
         float    wheel_radius;
         bool     command_receive;
         
+        StreamType     stream_type;
         ComError       com_error;
         MonitoringUnit monitoring_unit;
 

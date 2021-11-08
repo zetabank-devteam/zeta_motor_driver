@@ -2,23 +2,48 @@
 
 using namespace zeta_motor_driver;
 
-extern ros::NodeHandle nh;
-
 void SerialHelper::Begin()
 {
+    if(stream_type != StreamType::stream_rosserial)
+    {
+        stream.begin(serial_speed);
+    }
 }
 
 void SerialHelper::ReceiveData()
 {
+    if(stream_type != StreamType::stream_rosserial)
+    {
+        while(stream.available())
+        {
+            receive_message[message_index] = stream.read();
+            if(receive_message[message_index] == END_BYTE2)
+            {
+                message_index++;
+                command_receive = true;
+                break;
+            }
+            message_index++;
+            /* flush when overflow */
+            if(message_index == RX_BUFFER_SIZE)
+            {
+                memset(receive_message,'\0',RX_BUFFER_SIZE);
+                message_index = 0;
+                break;
+            }
+        }
+    }
+    
 }
 
 void SerialHelper::ExecuteCommand()
 {
-    uint8_t pid = receive_message[0];
     if(command_receive)
     {
-        if(pid != static_cast<uint8_t>(ParameterID::pid_last))
+        if(VerifyFormat() && VerifyLength() && VerifyChecksum())
         {
+            noInterrupts(); // lock rx buffer for avoiding wrong behavior
+            uint8_t pid = receive_message[POS_PID];
             Run(pid);
         }
         else
@@ -26,6 +51,7 @@ void SerialHelper::ExecuteCommand()
             com_error = ComError::no_error;
         }
         command_receive = false;
+        interrupts();
     }
     FlushReceiveMessage();
 }
@@ -111,6 +137,9 @@ void SerialHelper::TransmitVelocity()
     uint8_t vel_byte[2] = {RECEIVE_NO_DATA,};
     if(monitoring_unit == MonitoringUnit::monitoring_mps)
     {
+        transmit_message[transmit_index++] = START_BYTE1;
+        transmit_message[transmit_index++] = START_BYTE2;
+        transmit_message[transmit_index++] = LENGTH_MONITORING;
         transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
         transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
         if(motor1_state.vel_cur > FLOAT32_ZERO)
@@ -128,11 +157,17 @@ void SerialHelper::TransmitVelocity()
         ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur, DIGIT_VELOCITY);
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-
-
+        transmit_message[transmit_index] = Checksum(&(transmit_message[POS_LENGTH]), transmit_index);
+        transmit_index++;
+        transmit_message[transmit_index++] = END_BYTE1;
+        transmit_message[transmit_index++] = END_BYTE2;
+        stream.write(transmit_message,transmit_index);
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_rpm)
     {
+        transmit_message[transmit_index++] = START_BYTE1;
+        transmit_message[transmit_index++] = START_BYTE2;
+        transmit_message[transmit_index++] = LENGTH_MONITORING;
         transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
         transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
         if(motor1_state.vel_cur > FLOAT32_ZERO)
@@ -150,7 +185,11 @@ void SerialHelper::TransmitVelocity()
         ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-
+        transmit_message[transmit_index] = Checksum(&(transmit_message[POS_LENGTH]), transmit_index);
+        transmit_index++;
+        transmit_message[transmit_index++] = END_BYTE1;
+        transmit_message[transmit_index++] = END_BYTE2;
+        stream.write(transmit_message, transmit_index);
     }
     
 }
@@ -182,6 +221,21 @@ void SerialHelper::BrakeMotor()
 
 void SerialHelper::ReturnData()
 {
+    uint8_t transmit_message[TX_BUFFER_SIZE] = {0,};
+    int     transmit_index = 0;
+    transmit_message[transmit_index++] = START_BYTE1;
+    transmit_message[transmit_index++] = START_BYTE2;
+    transmit_message[transmit_index++] = receive_message[POS_LENGTH];
+    transmit_message[transmit_index++] = RETURN_CODE;
+    for(int i = POS_PID; i < receive_message[POS_LENGTH] + POS_PID; i++)
+    {
+        transmit_message[transmit_index++] = receive_message[i];
+    }
+    transmit_message[transmit_index] = Checksum(&(transmit_message[POS_LENGTH]),transmit_index);
+    transmit_index++;
+    transmit_message[transmit_index++] = END_BYTE1;
+    transmit_message[transmit_index++] = END_BYTE2;
+    stream.write(transmit_message,transmit_index);
 }
 
 ////////////////////////////////////////////
@@ -191,13 +245,61 @@ void SerialHelper::FlushReceiveMessage()
 {
     memset(receive_message, '\0', RX_BUFFER_SIZE);
     message_index = 0;
-    receive_message[0] = static_cast<uint8_t>(ParameterID::pid_last);
+}
+
+bool SerialHelper::VerifyFormat()
+{
+    if((receive_message[POS_START_BYTE1] != START_BYTE1) || (receive_message[POS_START_BYTE2] != START_BYTE2) ||
+        (receive_message[message_index - 2] != END_BYTE1) || (receive_message[message_index - 1] != END_BYTE2))
+    {
+#ifdef SERIAL_DEBUG
+        Serial.println("[error] Mismatch format.");
+#endif
+        com_error = ComError::error_mismatch_format;
+        return false;
+    }
+    return true;
+}
+
+bool SerialHelper::VerifyLength()
+{
+    if(receive_message[POS_LENGTH] != message_index - (POS_LENGTH + POS_CHECKSUM + 1))
+    {
+        com_error = ComError::error_mismatch_length;
+#ifdef SERIAL_DEBUG
+        Serial.print("[error] Mismatch length. Expected length is ");Serial.print(receive_message[POS_LENGTH],HEX);
+        Serial.print(" receive one is ");Serial.println(message_index - (POS_LENGTH + POS_CHECKSUM + 1),HEX);
+#endif
+        return false;
+    }
+    return true;
+}
+
+bool SerialHelper::VerifyChecksum()
+{
+    if(Checksum(&(receive_message[POS_LENGTH]),message_index - (POS_LENGTH + POS_CHECKSUM)) != receive_message[message_index - POS_CHECKSUM])
+    {
+#ifdef SERIAL_DEBUG
+        Serial.print("[error] Mismatch checksum. Expected sum is ");Serial.print(Checksum(&(receive_message[POS_LENGTH]),message_index - (POS_LENGTH + POS_CHECKSUM)),HEX);
+        Serial.print(" receive one is ");Serial.println(receive_message[message_index - POS_CHECKSUM],HEX);
+#endif
+        com_error = ComError::error_mismatch_checksum;
+        return false;
+    }
+    return true;
 }
 
 void SerialHelper::SetMessage(uint8_t msg[])
 {
-    memcpy(receive_message, msg, sizeof(uint8_t) * RX_BUFFER_SIZE);
-    command_receive = true;
+    for(int i = 0; i < RX_BUFFER_SIZE; i++)
+    {
+        receive_message[i] = msg[i];
+        if(receive_message[i] == END_BYTE2)
+        {
+            message_index = i;
+            break;
+        }
+    }
 }
 
 uint8_t SerialHelper::Checksum(uint8_t data[], int length)
