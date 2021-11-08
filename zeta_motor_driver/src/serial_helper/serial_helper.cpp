@@ -29,45 +29,6 @@ void SerialHelper::ReceiveData()
     }
 }
 
-<<<<<<< HEAD
-void SerialHelper::TransmittData()
-{
-    uint8_t transmitt_message[TX_BUFFER_SIZE] = {0x00,};
-    int     transmitt_index = 0;
-    transmitt_message[transmitt_index++] = START_BYTE1;
-    transmitt_message[transmitt_index++] = START_BYTE2;
-    if(monitoring)
-    {   
-        uint8_t dir = 0;
-        uint8_t vel_byte[2] = {0x00,};
-        transmitt_message[transmitt_index++] = LENGTH_MONITORING;
-        transmitt_message[transmitt_index++] = 0x00; // monotoring mode pid
-        transmitt_message[transmitt_index++] = static_cast<uint8_t>(monitoring_mode);
-        if(motor1_state.vel_cur > 0.0)
-        {
-            dir |= 0b01;
-        }
-        if(motor2_state.vel_cur > 0.0)
-        {
-            dir |= 0b10;
-        }
-        transmitt_message[transmitt_index++] = dir;
-        FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor1_state.vel_cur,3);
-        transmitt_message[transmitt_index++] = vel_byte[1];
-        transmitt_message[transmitt_index++] = vel_byte[0];
-        FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor2_state.vel_cur,3);
-        transmitt_message[transmitt_index++] = vel_byte[1];
-        transmitt_message[transmitt_index++] = vel_byte[0];
-        transmitt_message[transmitt_index] = Checksum(&(transmitt_message[POS_LENGTH]), transmitt_index);
-        transmitt_index++;
-    }
-    transmitt_message[transmitt_index++] = END_BYTE1;
-    transmitt_message[transmitt_index++] = END_BYTE2;
-    stream.write(transmitt_message,transmitt_index);
-}
-=======
-
->>>>>>> nightly
 
 void SerialHelper::ExecuteCommand()
 {
