@@ -22,14 +22,13 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     pinMode(motor2.encoder.encoder_pin, INPUT);
     Timer1.initialize(1000000/PWM_FREQUENCY);
     Timer3.initialize(1000000/PWM_FREQUENCY);
-    Timer3.pwm(motor1.pwm_pin,0);
-    Timer1.pwm(motor2.pwm_pin,0);
+    Timer1.pwm(motor1.pwm_pin,0);
+    Timer3.pwm(motor2.pwm_pin,0);
     decreasing_time = 10;
     runnable = true;
 }
 
-PidController::PidController()
-{}
+
 
 void PidController::StopMotor()
 {
@@ -40,11 +39,11 @@ void PidController::StopMotor()
     motor1.dir     *= -1;
     motor2.dir     *= -1;
     ChangeDir();
-    Timer3.pwm(motor1.pwm_pin, 1024);
-    Timer1.pwm(motor2.pwm_pin, 1024);
+    Timer1.pwm(motor1.pwm_pin, 1024);
+    Timer3.pwm(motor2.pwm_pin, 1024);
     delay(decreasing_time);
-    Timer3.pwm(motor1.pwm_pin, 0);
-    Timer1.pwm(motor2.pwm_pin, 0);
+    Timer1.pwm(motor1.pwm_pin, 0);
+    Timer3.pwm(motor2.pwm_pin, 0);
     motor1.dir = MOTOR_NEUTRAL;
     motor2.dir = MOTOR_NEUTRAL;
     motor1.state = MotorState::brake;

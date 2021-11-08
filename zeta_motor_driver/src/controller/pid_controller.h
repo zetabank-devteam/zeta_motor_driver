@@ -9,9 +9,9 @@
 #define PWM_FREQUENCY     5000UL // the most good wave form & performance(min 8cm/s available)
 // #define PWM_FREQUENCY     10000UL
 #define MOTOR_FORWARD      1
-#define MOTOR_BACKWARD    -1
+#define MOTOR_BACKWARD     -1
 #define MOTOR_NEUTRAL      0
-// #define ENABLE_FLOAT_SENSING
+#define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
 
 namespace zeta_motor_driver
@@ -81,7 +81,7 @@ class PidController
 
         motor_t   motor1, motor2;
         
-        PidController();
+        PidController() {}
         ~PidController() {}
         void Begin(motor_t,motor_t,pid_t);
         void SetMotorSpeed(float,float);
@@ -161,9 +161,7 @@ class PidController
                 motor2.state = MotorState::run;
             }
             time_control_pre = time_control_cur;
-            pid_motor1.err_derv_pre = pid_motor1.err_derv;
             pid_motor1.err_int_pre = pid_motor1.err_int;
-            pid_motor2.err_derv_pre = pid_motor2.err_derv;
             pid_motor2.err_int_pre = pid_motor2.err_int;
             if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
             {
@@ -177,20 +175,20 @@ class PidController
             }
             if(runnable && (motor1.state != MotorState::brake && motor2.state != MotorState::brake))
             {
-                Timer3.pwm(motor1.pwm_pin,abs(motor1.duty));
-                Timer1.pwm(motor2.pwm_pin,abs(motor2.duty));
+                Timer1.pwm(motor1.pwm_pin,abs(motor1.duty));
+                Timer3.pwm(motor2.pwm_pin,abs(motor2.duty));
             }
             else
             {
-                Timer3.pwm(motor1.pwm_pin, 0);
-                Timer1.pwm(motor2.pwm_pin, 0);
+                Timer1.pwm(motor1.pwm_pin, 0);
+                Timer3.pwm(motor2.pwm_pin, 0);
                 pid_motor1.InitError();
                 pid_motor2.InitError();
             }
-            // Serial1.print(motor1.vel_cmd);Serial1.print(", ");Serial1.print(motor1.vel_cur);Serial1.print(", ");
             //Serial1.println(motor1.duty / 500.0f);
             // Serial.print(motor1.duty);Serial.print(", ");Serial.println(motor2.duty);
             // Serial.print(motor1.vel_cmd,3);Serial.print(", ");Serial.println(motor1.vel_cur,3);
+            Serial.print(motor1.vel_cur,3);Serial.print(", ");Serial.println(motor2.vel_cur,3);
             
         }
         void read_encoder1()
@@ -222,7 +220,11 @@ class PidController
         uint16_t  decreasing_time;
         float     maximum_speed;
         float     minimum_speed;
+<<<<<<< HEAD
         float     ppr;             // pulse per rotation
+=======
+        float     ppr; // pulse per rotation
+>>>>>>> nightly
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
         bool      runnable;
