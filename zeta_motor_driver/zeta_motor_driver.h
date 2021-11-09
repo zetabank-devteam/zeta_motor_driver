@@ -16,7 +16,7 @@
 #define COMMAND_EXECUTE_FREQUENCY  20
 #define MA_FILTER_SIZE  15
 
-#define NUM_TASK  3
+#define NUM_TASK  5
 
 using namespace zeta_motor_driver;
 
@@ -46,8 +46,8 @@ enum
 };
 
 ros::NodeHandle nh;
-void SerialDataCallback(const std_msgs::UInt8MultiArray);
-ros::Subscriber<std_msgs::UInt8MultiArray> serial_data_subscriber("motor_driver_serial_data", &SerialDataCallback);
+void SerialInputCallback(const std_msgs::UInt8MultiArray);
+ros::Subscriber<std_msgs::UInt8MultiArray> serial_input_subscriber("motor_driver_serial_input", &SerialInputCallback);
 std_msgs::UInt8MultiArray serial_data_return_msg;
 ros::Publisher serial_data_return_publisher("motor_driver_serial_data_ack", &serial_data_return_msg);
 

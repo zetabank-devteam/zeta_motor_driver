@@ -128,8 +128,9 @@ void SerialHelper::TransmitVelocity()
         ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur, DIGIT_VELOCITY);
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-
-
+        memcpy(serial_output_msg.data, transmit_message, sizeof(uint8_t) * transmit_index);
+        serial_output_msg.data_length = transmit_index;
+        data_publisher -> publish(&serial_output_msg);
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_rpm)
     {
@@ -150,7 +151,9 @@ void SerialHelper::TransmitVelocity()
         ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-
+        memcpy(serial_output_msg.data, transmit_message, sizeof(uint8_t) * transmit_index);
+        serial_output_msg.data_length = transmit_index;
+        data_publisher -> publish(&serial_output_msg);
     }
     
 }
@@ -177,7 +180,6 @@ void SerialHelper::SetVelocity()
 
 void SerialHelper::BrakeMotor()
 {
-    
 }
 
 void SerialHelper::ReturnData()

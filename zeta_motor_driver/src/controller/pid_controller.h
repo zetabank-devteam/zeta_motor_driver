@@ -220,11 +220,7 @@ class PidController
         uint16_t  decreasing_time;
         float     maximum_speed;
         float     minimum_speed;
-<<<<<<< HEAD
         float     ppr;             // pulse per rotation
-=======
-        float     ppr; // pulse per rotation
->>>>>>> nightly
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
         bool      runnable;

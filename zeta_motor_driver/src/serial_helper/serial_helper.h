@@ -4,6 +4,7 @@
 #include "../controller/pid_controller.h"
 
 #include <ros.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <HardwareSerial.h>
 // #define SERIAL_DEBUG
 #define SERIAL_SPEED            115200 // if too slow, print take too long (print() disables interrupt!)
@@ -102,6 +103,11 @@ class SerialHelper : public ConfigurationHelper
             monitoring_unit = MonitoringUnit::monitoring_mps;
             command_receive = false;
             wheel_radius    = ConfigurationHelper::GetWheelRadius();
+            data_publisher  = new ros::Publisher("motor_driver_serial_output", &serial_output_msg);
+        }
+        ~SerialHelper()
+        {
+            delete data_publisher;
         }
         void    Begin();
         void    ReceiveData();    // from user
@@ -110,6 +116,7 @@ class SerialHelper : public ConfigurationHelper
         void    SetMessage(uint8_t[]);
         motor_state_t motor1_state;
         motor_state_t motor2_state;
+        using ConfigurationHelper::GetBaudrate;
     private:
         HardwareSerial& stream;
         int32_t  serial_speed;
@@ -117,6 +124,8 @@ class SerialHelper : public ConfigurationHelper
         int16_t  message_index;
         float    wheel_radius;
         bool     command_receive;
+        ros::Publisher*           data_publisher;
+        std_msgs::UInt8MultiArray serial_output_msg;
         
         ComError       com_error;
         MonitoringUnit monitoring_unit;

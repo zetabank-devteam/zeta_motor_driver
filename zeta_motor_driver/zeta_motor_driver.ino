@@ -26,7 +26,7 @@ void InitROS()
     nh.getHardware()->setBaud(serial_helper.GetBaudrate());
     nh.initNode();
     nh.advertise(fw_version_publisher);
-    nh.subscribe(serial_data_subscriber);
+    nh.subscribe(serial_input_subscriber);
 }
 
 void InitDriver()
@@ -65,12 +65,14 @@ void RunPeriodicEvent()
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }
+    time_cur = millis();
     if((time_cur - time_pre[task_execute_command]) > (1000 / COMMAND_EXECUTE_FREQUENCY))
     {
         serial_helper.ExecuteCommand();
         controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd);
         time_pre[task_execute_command] = time_cur;
     }
+    time_cur = millis();
     if((time_cur - time_pre[task_transmit_velocity]) > (1000 / VEL_TRANSMIT_FREQUENCY))
     {
         TransmitVelocity();
@@ -88,7 +90,7 @@ void TransmitVelocity()
     serial_helper.motor1_state.vel_cur = vel[0];
     serial_helper.motor2_state.vel_cur = vel[1];
     serial_helper.TransmitVelocity();
-    //Serial.print(serial_helper.motor1_state.vel_cur,3);Serial.print(", ");Serial.println(serial_helper.motor2_state.vel_cur,3);
+    //Serial1.print(serial_helper.motor1_state.vel_cur,3);Serial1.print(", ");Serial1.println(serial_helper.motor2_state.vel_cur,3);
 }
 
 
@@ -102,11 +104,10 @@ void serialEvent1()
     serial_helper.ReceiveData();
 }
 
-void SerialDataCallback(const std_msgs::UInt8MultiArray msg)
+void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
 {
     serial_helper.SetMessage(msg.data);
-    serial_data_return_msg.data_length = msg.data_length;
-    memcpy(serial_data_return_msg.data, msg.data, msg.data_length);
+    memcpy(&serial_data_return_msg, &msg, sizeof(msg));
     serial_data_return_publisher.publish(&serial_data_return_msg);
 }
 
