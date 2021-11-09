@@ -3,8 +3,6 @@
 #include "configuration_helper/configuration_helper.h"
 #include "../controller/pid_controller.h"
 
-#include <ros.h>
-#include <std_msgs/UInt8MultiArray.h>
 #include <HardwareSerial.h>
 // #define SERIAL_DEBUG
 #define SERIAL_SPEED            115200 // if too slow, print take too long (print() disables interrupt!)
@@ -12,26 +10,26 @@
 #define RX_BUFFER_SIZE          16
 
 /* comm */
-#define START_BYTE1             0xAA
-#define START_BYTE2             0xBB
-#define END_BYTE1               0xDD
-#define END_BYTE2               0x55
+// #define START_BYTE1             0xAA
+// #define START_BYTE2             0xBB
+// #define END_BYTE1               0xDD
+// #define END_BYTE2               0x55
 #define RECEIVE_NO_DATA         0x00
 
-#define POS_START_BYTE1         0
-#define POS_START_BYTE2         1
-#define POS_LENGTH              2
-#define POS_CHECKSUM            3
-#define POS_PID                 3
-#define POS_DATA_START          4
-#define POS_MONITORING_UNIT     4
-#define POS_DIR                 4
+// #define POS_START_BYTE1         0
+// #define POS_START_BYTE2         1
+// #define POS_LENGTH              2
+// #define POS_CHECKSUM            3
+#define POS_PID                 0
+// #define POS_DATA_START          4
+#define POS_MONITORING_UNIT     1
+#define POS_DIR                 1
 #define POS_VEL_H               0
 #define POS_VEL_L               1
-#define POS_MOT1_VEL_H          7
-#define POS_MOT1_VEL_L          8
-#define POS_MOT2_VEL_H          5
-#define POS_MOT2_VEL_L          6
+#define POS_MOT1_VEL_H          4
+#define POS_MOT1_VEL_L          5
+#define POS_MOT2_VEL_H          2
+#define POS_MOT2_VEL_L          3
 
 #define RETURN_CODE             0x60
 #define ERROR_CODE              0x90
@@ -46,7 +44,8 @@
 #define MOTOR1_FORWARD          (0b01)
 #define MOTOR2_FORWARD          (0b10)
 
-#define LENGTH_MONITORING  7
+#define LENGTH_SET_MONITORING    2
+#define LENGTH_SET_VELOCITY      6
 
 namespace zeta_motor_driver
 {
@@ -103,17 +102,13 @@ class SerialHelper : public ConfigurationHelper
             monitoring_unit = MonitoringUnit::monitoring_mps;
             command_receive = false;
             wheel_radius    = ConfigurationHelper::GetWheelRadius();
-            data_publisher  = new ros::Publisher("motor_driver_serial_output", &serial_output_msg);
-        }
-        ~SerialHelper()
-        {
-            delete data_publisher;
         }
         void    Begin();
         void    ReceiveData();    // from user
         void    ExecuteCommand();
         void    TransmitVelocity();
-        void    SetMessage(uint8_t[]);
+        void    SetMessage(uint8_t[],uint32_t);
+        void    GetMessage(uint8_t[],uint32_t*);
         motor_state_t motor1_state;
         motor_state_t motor2_state;
         using ConfigurationHelper::GetBaudrate;
@@ -121,11 +116,11 @@ class SerialHelper : public ConfigurationHelper
         HardwareSerial& stream;
         int32_t  serial_speed;
         uint8_t  receive_message[RX_BUFFER_SIZE];
+        uint8_t  transmit_message[TX_BUFFER_SIZE];
+        int16_t  transmit_index;
         int16_t  message_index;
         float    wheel_radius;
         bool     command_receive;
-        ros::Publisher*           data_publisher;
-        std_msgs::UInt8MultiArray serial_output_msg;
         
         ComError       com_error;
         MonitoringUnit monitoring_unit;
@@ -137,19 +132,21 @@ class SerialHelper : public ConfigurationHelper
         bool     VerifyLength();
         bool     VerifyChecksum();
         void     ReturnData();
-        void     SetMonitoringUnit();
-        void     SetVelocity();
-        void     ReleaseMotor();
-        void     BrakeMotor();
-        void     SetPGain();
-        void     SetIGain();
-        void     SetDGain();
-        void     SetMaxSpeed();
-        void     SetMinSpeed();
-        void     SetPPR();
-        void     SetWheelRadius();
-        void     SetIncreasingTime();
-        void     SetDecreasingTime();
+        bool     SetMonitoringUnit();
+        bool     SetVelocity();
+        bool     ReleaseMotor();
+        bool     BrakeMotor();
+        bool     SetPGain();
+        bool     SetIGain();
+        bool     SetDGain();
+        bool     SetMaxSpeed();
+        bool     SetMinSpeed();
+        bool     SetPPR();
+        bool     SetWheelRadius();
+        bool     SetIncreasingTime();
+        bool     SetDecreasingTime();
+        using    ConfigurationHelper::FloatToBytes;
+        using    ConfigurationHelper::BytesToFloat;
 
 };
 } /* namespace zeta_motor_driver */

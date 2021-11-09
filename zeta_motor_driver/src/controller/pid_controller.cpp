@@ -55,6 +55,10 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2)
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
+    if(fabs(motor1.vel_cmd - speed_motor1 < VERY_SMALL_FLOAT) && fabs(motor2.vel_cmd - speed_motor2 < VERY_SMALL_FLOAT))
+    {
+        return;
+    }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
     if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)

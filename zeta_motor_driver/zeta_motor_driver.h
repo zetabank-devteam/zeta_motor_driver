@@ -48,8 +48,11 @@ enum
 ros::NodeHandle nh;
 void SerialInputCallback(const std_msgs::UInt8MultiArray);
 ros::Subscriber<std_msgs::UInt8MultiArray> serial_input_subscriber("motor_driver_serial_input", &SerialInputCallback);
-std_msgs::UInt8MultiArray serial_data_return_msg;
-ros::Publisher serial_data_return_publisher("motor_driver_serial_data_ack", &serial_data_return_msg);
+std_msgs::UInt8MultiArray serial_output_msg;
+ros::Publisher serial_output_publisher("motor_driver_serial_output", &serial_output_msg);
+
+// std_msgs::UInt8MultiArray test_msg;
+// ros::Publisher test_publisher("motor_driver_serial_input", &test_msg);
 
 std_msgs::String fw_version_msg;
 ros::Publisher fw_version_publisher("driver_fw_version", &fw_version_msg);
