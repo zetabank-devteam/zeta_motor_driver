@@ -11,9 +11,17 @@
 #define MOTOR_FORWARD      1
 #define MOTOR_BACKWARD     -1
 #define MOTOR_NEUTRAL      0
-#define ENABLE_FLOAT_SENSING
+// #define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
-
+#define TEST_ROBOT
+// #define SERIAL_DEBUG
+#ifdef TEST_ROBOT
+#define MOT1_TIMER  Timer3
+#define MOT2_TIMER  Timer1
+#else
+#define MOT1_TIMER  Timer3
+#define MOT2_TIMER  Timer1
+#endif
 namespace zeta_motor_driver
 {
 class PidController
@@ -122,6 +130,7 @@ class PidController
             pid_motor2.err_derv = (pid_motor2.err - pid_motor2.err_pre) / sampling_time; 
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty += pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd;
+            
             /* profile generator block */
             // @TODO add velocity profiling
             if(abs(motor1.duty) < MINIMUM_DUTY)
@@ -175,20 +184,19 @@ class PidController
             }
             if(runnable && (motor1.state != MotorState::brake && motor2.state != MotorState::brake))
             {
-                Timer1.pwm(motor1.pwm_pin,abs(motor1.duty));
-                Timer3.pwm(motor2.pwm_pin,abs(motor2.duty));
+                MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
+                MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
             }
             else
             {
-                Timer1.pwm(motor1.pwm_pin, 0);
-                Timer3.pwm(motor2.pwm_pin, 0);
+                MOT1_TIMER.pwm(motor1.pwm_pin, 0);
+                MOT2_TIMER.pwm(motor2.pwm_pin, 0);
                 pid_motor1.InitError();
                 pid_motor2.InitError();
             }
             //Serial1.println(motor1.duty / 500.0f);
             // Serial.print(motor1.duty);Serial.print(", ");Serial.println(motor2.duty);
             // Serial.print(motor1.vel_cmd,3);Serial.print(", ");Serial.println(motor1.vel_cur,3);
-            Serial.print(motor1.vel_cur,3);Serial.print(", ");Serial.println(motor2.vel_cur,3);
             
         }
         void read_encoder1()

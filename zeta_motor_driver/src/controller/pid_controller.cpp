@@ -20,10 +20,10 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     pinMode(motor2.ccw_pin,   OUTPUT);
     pinMode(motor2.float_pin, INPUT_PULLUP);
     pinMode(motor2.encoder.encoder_pin, INPUT);
-    Timer1.initialize(1000000/PWM_FREQUENCY);
-    Timer3.initialize(1000000/PWM_FREQUENCY);
-    Timer1.pwm(motor1.pwm_pin,0);
-    Timer3.pwm(motor2.pwm_pin,0);
+    MOT1_TIMER.initialize(1000000/PWM_FREQUENCY);
+    MOT2_TIMER.initialize(1000000/PWM_FREQUENCY);
+    MOT1_TIMER.pwm(motor1.pwm_pin,0);
+    MOT2_TIMER.pwm(motor2.pwm_pin,0);
     decreasing_time = 10;
     runnable = true;
 }
@@ -39,11 +39,11 @@ void PidController::StopMotor()
     motor1.dir     *= -1;
     motor2.dir     *= -1;
     ChangeDir();
-    Timer1.pwm(motor1.pwm_pin, 1024);
-    Timer3.pwm(motor2.pwm_pin, 1024);
+    MOT1_TIMER.pwm(motor1.pwm_pin, 1024);
+    MOT2_TIMER.pwm(motor2.pwm_pin, 1024);
     delay(decreasing_time);
-    Timer1.pwm(motor1.pwm_pin, 0);
-    Timer3.pwm(motor2.pwm_pin, 0);
+    MOT1_TIMER.pwm(motor1.pwm_pin, 0);
+    MOT2_TIMER.pwm(motor2.pwm_pin, 0);
     motor1.dir = MOTOR_NEUTRAL;
     motor2.dir = MOTOR_NEUTRAL;
     motor1.state = MotorState::brake;
@@ -55,7 +55,8 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2)
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
-    if(fabs(motor1.vel_cmd - speed_motor1 < VERY_SMALL_FLOAT) && fabs(motor2.vel_cmd - speed_motor2 < VERY_SMALL_FLOAT))
+    if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT)
+        && (motor1.vel_cmd * motor1.dir > 0.0) && (motor2.vel_cmd * motor2.dir > 0.0))
     {
         return;
     }
