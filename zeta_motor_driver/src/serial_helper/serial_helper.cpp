@@ -170,6 +170,7 @@ bool SerialHelper::SetVelocity()
     int dir2 = MOTOR_BACKWARD;
     if(message_index != LENGTH_SET_VELOCITY)
     {
+
         return false;
     }
     if((receive_message[POS_DIR] & MOTOR1_FORWARD))
@@ -183,7 +184,7 @@ bool SerialHelper::SetVelocity()
     motor1_state.vel_cmd = BytesToFloat(receive_message[POS_MOT1_VEL_H], receive_message[POS_MOT1_VEL_L], DIGIT_VELOCITY) * float(dir1);
     motor2_state.vel_cmd = BytesToFloat(receive_message[POS_MOT2_VEL_H], receive_message[POS_MOT2_VEL_L], DIGIT_VELOCITY) * float(dir2);
 #ifdef SERIAL_DEBUG
-    Serial.print("cmd vel: ");Serial.print(motor1_state.vel_cmd,3);Serial.print(", ");Serial.println(motor2_state.vel_cmd,3);
+    DEBUG_PORT.print("cmd vel: ");DEBUG_PORT.print(motor1_state.vel_cmd,3);DEBUG_PORT.print(", ");DEBUG_PORT.println(motor2_state.vel_cmd,3);
 #endif
     return true;
 }
