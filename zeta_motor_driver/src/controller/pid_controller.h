@@ -4,7 +4,7 @@
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
 #define MINIMUM_DUTY  80
-#define MAXIMUM_DUTY  500
+#define MAXIMUM_DUTY  500 // caution! carefully change this value for preventing overdrive of motor driver
 #define VERY_SMALL_FLOAT  0.001f
 #define PWM_FREQUENCY     5000UL // the most good wave form & performance(min 8cm/s available)
 // #define PWM_FREQUENCY     10000UL
@@ -13,14 +13,14 @@
 #define MOTOR_NEUTRAL      0
 // #define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
-#define TEST_ROBOT
+// #define TEST_ROBOT
 // #define SERIAL_DEBUG
 #ifdef TEST_ROBOT
 #define MOT1_TIMER  Timer3
 #define MOT2_TIMER  Timer1
 #else
-#define MOT1_TIMER  Timer3
-#define MOT2_TIMER  Timer1
+#define MOT1_TIMER  Timer1
+#define MOT2_TIMER  Timer3
 #endif
 namespace zeta_motor_driver
 {
