@@ -1,7 +1,7 @@
 #ifndef ZETA_MOTOR_DRIVER_H_
 #define ZETA_MOTOR_DRIVER_H_
-
-#define FW_VERSION "0.0.1"
+// #define NO_ROS
+#define FW_VERSION "0.1.0"
 
 #include "src/configuration/pin_configuration.h"
 #include "src/serial_helper/serial_helper.h"
@@ -45,6 +45,7 @@ enum
     task_transmit_velocity,
 };
 
+#ifndef NO_ROS
 ros::NodeHandle nh;
 void SerialInputCallback(const std_msgs::UInt8MultiArray);
 ros::Subscriber<std_msgs::UInt8MultiArray> serial_input_subscriber("motor_driver_serial_input", &SerialInputCallback);
@@ -56,5 +57,6 @@ ros::Publisher serial_output_publisher("motor_driver_serial_output", &serial_out
 
 std_msgs::String fw_version_msg;
 ros::Publisher fw_version_publisher("driver_fw_version", &fw_version_msg);
+#endif
 
 #endif /* ZETA_MOTOR_DRIVER_H_ */

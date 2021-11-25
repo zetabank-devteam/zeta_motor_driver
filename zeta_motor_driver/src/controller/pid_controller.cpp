@@ -55,39 +55,19 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2)
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
-    if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT)
-        && (motor1.vel_cmd * motor1.dir > 0.0) && (motor2.vel_cmd * motor2.dir > 0.0))
+    if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
-        return;
+        return; // if no speed change
     }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
-    if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
+    for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
     {
-        motor1.dir = MOTOR_NEUTRAL; // if zero input
-        pid_motor1.InitError();
+        motor1.vel_cmd_profile[i] = motor1.vel_cur + (motor1.vel_cmd - motor1.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
+        motor2.vel_cmd_profile[i] = motor2.vel_cur + (motor2.vel_cmd - motor2.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
     }
-    else if(motor1.vel_cmd < 0.0)
-    {
-        motor1.dir = MOTOR_BACKWARD;
-    }
-    else
-    {
-        motor1.dir = MOTOR_FORWARD;
-    }
-    if(fabs(motor2.vel_cmd) < VERY_SMALL_FLOAT)
-    {
-        motor2.dir = MOTOR_NEUTRAL; // if zero input
-        pid_motor2.InitError();
-    }
-    else if(motor2.vel_cmd < 0.0)
-    {
-        motor2.dir = MOTOR_BACKWARD;
-    }
-    else
-    {
-        motor2.dir = MOTOR_FORWARD;
-    }
+    motor1.vel_step = 0;
+    motor2.vel_step = 0;
     //ChangeDir();
     //ControlVel();
     /*

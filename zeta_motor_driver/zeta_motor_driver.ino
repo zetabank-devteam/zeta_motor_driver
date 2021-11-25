@@ -8,7 +8,6 @@
 // *length: length of payload (N)
 // **PID: Parameter ID.
 // ***chksum = sum of payload & length = (len + d1 + d2 + ... dN) & 0xFF
-
 void setup() {
     // put your setup code here, to run once:
     Serial1.begin(115200);
@@ -22,6 +21,7 @@ void setup() {
     delay(1);
 }
 
+#ifndef NO_ROS
 void InitROS()
 {
     nh.getHardware()->setBaud(serial_helper.GetBaudrate());
@@ -34,6 +34,7 @@ void InitROS()
     // test_msg.data = (uint8_t*)malloc(16);
     serial_output_msg.data = (uint8_t*)malloc(sizeof(uint8_t) * TX_BUFFER_SIZE);
 }
+#endif
 
 void InitDriver()
 {
@@ -103,16 +104,20 @@ void TransmitVelocity()
     serial_helper.motor1_state.vel_cur = vel[0];
     serial_helper.motor2_state.vel_cur = vel[1];
     serial_helper.TransmitVelocity();
+#ifndef NO_ROS
     serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
     serial_output_publisher.publish(&serial_output_msg);
+#endif
     //Serial1.print(serial_helper.motor1_state.vel_cur,3);Serial1.print(", ");Serial1.println(serial_helper.motor2_state.vel_cur,3);
 }
 
 void ExecuteCommand()
 {
     serial_helper.ExecuteCommand();
+#ifndef NO_ROS
     serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
     serial_output_publisher.publish(&serial_output_msg);
+#endif
 }
 
 
@@ -123,12 +128,33 @@ void loop()
 
 void serialEvent1()
 {
-    serial_helper.ReceiveData();
+    //serial_helper.ReceiveData();
 }
 
+#ifdef NO_ROS
+void serialEvent()
+{
+    static uint8_t data[6];
+    static int     data_length = 0;
+    while(Serial.available())
+    {
+        data[data_length++] = Serial.read();
+    }
+    if(data_length == 6)
+    {
+        Serial.write(data, data_length);
+        serial_helper.SetMessage(data, data_length);
+        data_length = 0;
+        memset(data,0xff,6);
+    }
+    
+}
+
+#else
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
 {
     serial_helper.SetMessage(msg.data, msg.data_length);
 }
+#endif
 
 /* zeta_motor_driver.ino */
