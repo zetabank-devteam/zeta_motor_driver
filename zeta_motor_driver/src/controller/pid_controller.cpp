@@ -50,11 +50,26 @@ void PidController::StopMotor()
     motor2.state = MotorState::brake;
 }
 
-void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2)
+void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool brake = false)
 {
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
+    if(brake)
+    {
+        motor1.vel_cmd = 0.0f;
+        motor2.vel_cmd = 0.0f;
+        for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
+        {
+            motor1.vel_cmd_profile[i] = 0.0f;
+            motor2.vel_cmd_profile[i] = 0.0f;
+        }
+        motor1.vel_step = 0;
+        motor2.vel_step = 0;
+        motor1.state = MotorState::brake;
+        motor2.state = MotorState::brake;
+        return;
+    }
     if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
         return; // if no speed change
@@ -68,13 +83,6 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2)
     }
     motor1.vel_step = 0;
     motor2.vel_step = 0;
-    //ChangeDir();
-    //ControlVel();
-    /*
-     * @TODO add output profiler for mapping vel_cur with the real velocity
-     * ex) (-) to (+), (-) to 0 within 1/2 of increasing time and 0 to (+) within 1/2 increasing time
-    */
-    
     //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
 }
 

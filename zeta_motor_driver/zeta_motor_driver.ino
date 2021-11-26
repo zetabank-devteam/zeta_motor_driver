@@ -68,7 +68,14 @@ void RunPeriodicEvent()
     static uint32_t time_pre[NUM_TASK];
     if((time_cur - time_pre[task_control_motor]) > (1000 / CONTROL_FREQUENCY))
     {
-        controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd);
+        if(serial_helper.IsBrake())
+        {
+            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, true);
+        }
+        else
+        {
+            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd);
+        }
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }

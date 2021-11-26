@@ -97,7 +97,7 @@ class PidController
         PidController() {}
         ~PidController() {}
         void Begin(motor_t,motor_t,pid_t);
-        void SetMotorSpeed(float,float);
+        void SetMotorSpeed(float,float,bool = false);
         void StopMotor();
         void SetGain(float,float,float);
         void SetIncreasingTime(uint16_t);
@@ -118,6 +118,11 @@ class PidController
             static float    sampling_time;
             uint32_t        time_control_cur = micros();
             /* feedback block */
+            if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
+            {
+                StopMotor();
+                return;
+            }
             ChangeDir();
             if(time_control_cur - time_control_pre < 0xF0000000)
             {
@@ -216,9 +221,9 @@ class PidController
             // static uint64_t cnt;
             // // if(cnt++ % 2 == 0)
             // {
-            //     Serial1.print(motor1.vel_cmd,3);Serial1.print(", ");
+                Serial1.print(motor1.vel_cmd,3);Serial1.print(", ");
             //     // Serial1.print(motor1.vel_cmd_profile[motor1.vel_step],3);Serial1.print(",");
-            //     Serial1.println(motor1.vel_cur,3);
+                Serial1.println(motor1.vel_cur,3);
             // }
         }
 

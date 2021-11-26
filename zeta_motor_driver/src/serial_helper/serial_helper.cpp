@@ -7,6 +7,8 @@ extern ros::NodeHandle nh;
 
 void SerialHelper::Begin()
 {
+    motor1_state.runnable = true;
+    motor2_state.runnable = true;
 }
 
 void SerialHelper::ReceiveData()
@@ -33,6 +35,7 @@ void SerialHelper::ExecuteCommand()
 
 bool SerialHelper::Run(uint8_t pid)
 {
+    float gain = 0.0f; // temp value
     switch(static_cast<ParameterID>(pid))
     {
         case ParameterID::pid_monitoring:
@@ -47,26 +50,56 @@ bool SerialHelper::Run(uint8_t pid)
             {
                 ReturnData();
             }
+            else
+            {
+                ReturnError();
+            }
+            SetConfigurable(false);
             break;
         case ParameterID::pid_brake_motor:
-            //BrakeMotor();
-            ReturnData();
+            if(BrakeMotor())
+            {
+                ReturnData();
+            }
             break;
         case ParameterID::pid_release_motor:
-            //ReleaseMotor();
-            ReturnData();
+            if(ReleaseMotor())
+            {
+                ReturnData();
+            }
+            break;
+        case ParameterID::pid_configure_mode:
+            SetConfigurable(true);
             break;
         case ParameterID::pid_set_p_gain:
-            //SetPGain();
-            ReturnData();
+            if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
+            {
+                if(!ConfigurationHelper::SetPGain(gain))
+                {
+                    ReturnError();
+                }
+                ReturnData();
+            }
             break;
         case ParameterID::pid_set_i_gain:
-            //SetIGain();
-            ReturnData();
+            if(gain > 0.0f && gain <= (float(0xffff) / 1000.0f))
+            {
+                if(!ConfigurationHelper::SetIGain(gain))
+                {
+                    ReturnError();
+                }
+                ReturnData();
+            }
             break;
         case ParameterID::pid_set_d_gain:
-            //SetDGain();
-            ReturnData();
+            if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
+            {
+                if(!ConfigurationHelper::SetDGain(gain))
+                {
+                    ReturnError();
+                }
+                ReturnData();
+            }
             break;
         case ParameterID::pid_set_max_speed:
             //SetMaxSpeed();
@@ -170,7 +203,6 @@ bool SerialHelper::SetVelocity()
     int dir2 = MOTOR_BACKWARD;
     if(message_index != LENGTH_SET_VELOCITY)
     {
-
         return false;
     }
     if((receive_message[POS_DIR] & MOTOR1_FORWARD))
@@ -191,6 +223,18 @@ bool SerialHelper::SetVelocity()
 
 bool SerialHelper::BrakeMotor()
 {
+    motor1_state.vel_cmd  = 0.0f;
+    motor2_state.vel_cmd  = 0.0f;
+    motor1_state.runnable = false;
+    motor2_state.runnable = false;
+    return true;
+}
+
+bool SerialHelper::ReleaseMotor()
+{
+    motor1_state.runnable = true;
+    motor2_state.runnable = true;
+    return true;
 }
 
 void SerialHelper::ReturnData()
@@ -202,6 +246,11 @@ void SerialHelper::ReturnData()
     {
         transmit_message[transmit_index++] = receive_message[i];
     }
+}
+
+void SerialHelper::ReturnError()
+{
+    ;
 }
 
 ////////////////////////////////////////////
@@ -225,6 +274,15 @@ void SerialHelper::GetMessage(uint8_t dest[], uint32_t* length)
 {
     memcpy(dest, transmit_message, sizeof(uint8_t) * transmit_index);
     *length = transmit_index;
+}
+
+bool SerialHelper::IsBrake()
+{
+    if(!motor1_state.runnable || !motor2_state.runnable)
+    {
+        return true;
+    }
+    return false;
 }
 
 uint8_t SerialHelper::Checksum(uint8_t data[], int length)

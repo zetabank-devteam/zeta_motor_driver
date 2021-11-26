@@ -59,6 +59,7 @@ class ConfigurationHelper
                 SetFactoryValue();
             }
             Update();
+            configurable = false;
         }
         void     GetVersion(uint8_t dest[]) { memcpy(dest, version,    sizeof(uint8_t) * 2); }
         void     GetError(uint8_t dest[])   { memcpy(dest, last_error, sizeof(uint8_t) * 2); }
@@ -72,6 +73,7 @@ class ConfigurationHelper
         float    GetWheelRadius()           { return wheel_radius;}
         uint16_t GetIncreasingTime()        { return increasing_time;}
         uint16_t GetDecreasingTime()        { return decreasing_time;}
+        void     SetConfigurable(bool);
     private:
         int32_t  baudrate;
         uint8_t  version[2];
@@ -85,6 +87,7 @@ class ConfigurationHelper
         float    wheel_radius;
         uint16_t increasing_time;
         uint16_t decreasing_time;
+        bool     configurable;
         void     SetFactoryValue();
         void     SetEEPROM(uint16_t,float,int);
         void     SetEEPROM(uint16_t,uint16_t);
@@ -94,9 +97,9 @@ class ConfigurationHelper
         void     SetVersion(uint8_t[]);
         void     SetError(uint8_t[]);
         void     SetBaudrate(int32_t);
-        void     SetPGain(float);
-        void     SetIGain(float);
-        void     SetDGain(float);
+        bool     SetPGain(float);
+        bool     SetIGain(float);
+        bool     SetDGain(float);
         void     SetMaxSpeed(float);
         void     SetMinSpeed(float);
         void     SetPPR(float);

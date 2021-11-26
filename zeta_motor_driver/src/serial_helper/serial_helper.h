@@ -1,7 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_SERIAL_HELPER_H_
 #define ZETA_MOTOR_DRIVER_SERIAL_HELPER_H_
 #include "configuration_helper/configuration_helper.h"
-#include "../controller/pid_controller.h"
 
 #include <HardwareSerial.h>
 #define DEBUG_PORT  Serial1
@@ -23,6 +22,9 @@
 // #define POS_CHECKSUM            3
 #define POS_PID                 0
 // #define POS_DATA_START          4
+
+#define MOTOR_FORWARD           1
+#define MOTOR_BACKWARD          -1
 #define POS_MONITORING_UNIT     1
 #define POS_DIR                 1
 #define POS_VEL_H               0
@@ -56,7 +58,7 @@ class SerialHelper : public ConfigurationHelper
     {
         float vel_cmd;
         float vel_cur;
-        PidController::MotorState motor_state;
+        bool  runnable;
     }motor_state_t;
     enum class ComError : uint8_t
     {
@@ -72,6 +74,7 @@ class SerialHelper : public ConfigurationHelper
         pid_run_motor,
         pid_brake_motor,
         pid_release_motor,
+        pid_configure_mode,
         pid_set_p_gain,
         pid_set_i_gain,
         pid_set_d_gain,
@@ -110,9 +113,9 @@ class SerialHelper : public ConfigurationHelper
         void    TransmitVelocity();
         void    SetMessage(uint8_t[],uint32_t);
         void    GetMessage(uint8_t[],uint32_t*);
+        bool    IsBrake();
         motor_state_t motor1_state;
         motor_state_t motor2_state;
-        using ConfigurationHelper::GetBaudrate;
     private:
         HardwareSerial& stream;
         int32_t  serial_speed;
@@ -133,22 +136,17 @@ class SerialHelper : public ConfigurationHelper
         bool     VerifyLength();
         bool     VerifyChecksum();
         void     ReturnData();
+        void     ReturnError();
         bool     SetMonitoringUnit();
         bool     SetVelocity();
         bool     ReleaseMotor();
         bool     BrakeMotor();
-        bool     SetPGain();
-        bool     SetIGain();
-        bool     SetDGain();
         bool     SetMaxSpeed();
         bool     SetMinSpeed();
         bool     SetPPR();
         bool     SetWheelRadius();
         bool     SetIncreasingTime();
         bool     SetDecreasingTime();
-        using    ConfigurationHelper::FloatToBytes;
-        using    ConfigurationHelper::BytesToFloat;
-
 };
 } /* namespace zeta_motor_driver */
 

@@ -73,22 +73,25 @@ void ConfigurationHelper::SetError(uint8_t src[])
     memcpy(last_error, src, sizeof(uint8_t) * 2);
 }
 
-void ConfigurationHelper::SetPGain(float gain)
+bool ConfigurationHelper::SetPGain(float gain)
 {
     SetEEPROM(BASE_ADDRESS_P_GAIN, gain, 1);
     p_gain = (EEPROM.read(BASE_ADDRESS_P_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_P_GAIN)) / 10.0f;
+    return configurable;
 }
 
-void ConfigurationHelper::SetIGain(float gain)
+bool ConfigurationHelper::SetIGain(float gain)
 {
-    SetEEPROM(BASE_ADDRESS_I_GAIN, gain, 1);
-    i_gain = (EEPROM.read(BASE_ADDRESS_I_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_I_GAIN)) / 10.0f;
+    SetEEPROM(BASE_ADDRESS_I_GAIN, gain, 3);
+    i_gain = (EEPROM.read(BASE_ADDRESS_I_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_I_GAIN)) / 1000.0f;
+    return configurable;
 }
 
-void ConfigurationHelper::SetDGain(float gain)
+bool ConfigurationHelper::SetDGain(float gain)
 {
     SetEEPROM(BASE_ADDRESS_D_GAIN, gain, 1);
     d_gain = (EEPROM.read(BASE_ADDRESS_D_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_D_GAIN)) / 10.0f;
+    return configurable;
 }
 
 void ConfigurationHelper::SetMaxSpeed(float speed)
@@ -140,27 +143,44 @@ void ConfigurationHelper::SetEEPROM(uint16_t base_address, float val, int digit)
         val_new = uint16_t(val * 1000.0f);
     }
     UInt16ToBytes(&(two_bytes[1]), &(two_bytes[0]), val_new);
-    EEPROM.update(base_address,         two_bytes[0]);
-    EEPROM.update(base_address + 0x001, two_bytes[1]);
+    if(configurable)
+    {
+        EEPROM.update(base_address,         two_bytes[0]);
+        EEPROM.update(base_address + 0x001, two_bytes[1]);
+    }
 }
 
 void ConfigurationHelper::SetEEPROM(uint16_t base_address, uint16_t val)
 {
     uint8_t  two_bytes[2];
     UInt16ToBytes(&(two_bytes[1]), &(two_bytes[0]), val);
-    EEPROM.update(base_address,         two_bytes[0]);
-    EEPROM.update(base_address + 0x001, two_bytes[1]);
+    if(configurable)
+    {
+        EEPROM.update(base_address,         two_bytes[0]);
+        EEPROM.update(base_address + 0x001, two_bytes[1]);
+    }
 }
 
 void ConfigurationHelper::SetEEPROM(uint16_t base_address, uint8_t val[])
 {
-    EEPROM.update(base_address,         val[0]);
-    EEPROM.update(base_address + 0x001, val[1]);
+    if(configurable)
+    {
+        EEPROM.update(base_address,         val[0]);
+        EEPROM.update(base_address + 0x001, val[1]);
+    }
 }
 
 void ConfigurationHelper::SetEEPROM(uint16_t base_address, uint8_t val)
 {
-    EEPROM.update(base_address, val);
+    if(configurable)
+    {
+        EEPROM.update(base_address, val);
+    }
+}
+
+void ConfigurationHelper::SetConfigurable(bool configurable_)
+{
+    configurable = configurable_;
 }
 
 void ConfigurationHelper::FloatToBytes(uint8_t* byte_h, uint8_t* byte_l, float src, int digit)
