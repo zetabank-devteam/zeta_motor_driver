@@ -35,7 +35,6 @@ void SerialHelper::ExecuteCommand()
 
 bool SerialHelper::Run(uint8_t pid)
 {
-    float gain = 0.0f; // temp value
     switch(static_cast<ParameterID>(pid))
     {
         case ParameterID::pid_monitoring:
@@ -46,6 +45,10 @@ bool SerialHelper::Run(uint8_t pid)
             
             break;
         case ParameterID::pid_run_motor:
+            if(receive_index != LENGTH_SET_VELOCITY)
+            {
+                break;
+            }
             if(SetVelocity())
             {
                 ReturnData();
@@ -57,21 +60,34 @@ bool SerialHelper::Run(uint8_t pid)
             SetConfigurable(false);
             break;
         case ParameterID::pid_brake_motor:
+            if(receive_index != 1)
+            {
+                break;
+            }
             if(BrakeMotor())
             {
                 ReturnData();
             }
             break;
         case ParameterID::pid_release_motor:
+            if(receive_index != 1)
+            {
+                break;
+            }
             if(ReleaseMotor())
             {
                 ReturnData();
             }
             break;
         case ParameterID::pid_configure_mode:
+            if(receive_index != 1)
+            {
+                break;
+            }
             SetConfigurable(true);
             break;
         case ParameterID::pid_set_p_gain:
+            float gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
                 if(!ConfigurationHelper::SetPGain(gain))
@@ -82,6 +98,7 @@ bool SerialHelper::Run(uint8_t pid)
             }
             break;
         case ParameterID::pid_set_i_gain:
+            float gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_3DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 1000.0f))
             {
                 if(!ConfigurationHelper::SetIGain(gain))
@@ -92,6 +109,7 @@ bool SerialHelper::Run(uint8_t pid)
             }
             break;
         case ParameterID::pid_set_d_gain:
+            float gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
                 if(!ConfigurationHelper::SetDGain(gain))
@@ -140,7 +158,7 @@ bool SerialHelper::Run(uint8_t pid)
 ////////////////////////////////////////////
 bool SerialHelper::SetMonitoringUnit()
 {
-    //if(message_index != 2)
+    //if(receive_index != 2)
     if(receive_message[POS_MONITORING_UNIT] < static_cast<uint8_t>(MonitoringUnit::monitoring_last))
     {
         monitoring_unit = static_cast<MonitoringUnit>(receive_message[POS_MONITORING_UNIT]);
@@ -201,7 +219,7 @@ bool SerialHelper::SetVelocity()
     float vel1, vel2;
     int dir1 = MOTOR_BACKWARD;
     int dir2 = MOTOR_BACKWARD;
-    if(message_index != LENGTH_SET_VELOCITY)
+    if(receive_index != LENGTH_SET_VELOCITY)
     {
         return false;
     }
@@ -242,7 +260,7 @@ void SerialHelper::ReturnData()
     memset(transmit_message, RECEIVE_NO_DATA, TX_BUFFER_SIZE);
     transmit_index = 0;
     transmit_message[transmit_index++] = RETURN_CODE;
-    for(int i = 0; i < message_index; i++)
+    for(int i = 0; i < receive_index; i++)
     {
         transmit_message[transmit_index++] = receive_message[i];
     }
@@ -259,18 +277,18 @@ void SerialHelper::ReturnError()
 void SerialHelper::FlushReceiveMessage()
 {
     memset(receive_message, RECEIVE_NO_DATA, RX_BUFFER_SIZE);
-    message_index = 0;
+    receive_index = 0;
     receive_message[0] = static_cast<uint8_t>(ParameterID::pid_last);
 }
 
-void SerialHelper::SetMessage(uint8_t msg[], uint32_t length)
+void SerialHelper::SetMessage(uint8_t msg[], uint8_t length)
 {
     memcpy(receive_message, msg, sizeof(uint8_t) * length);
-    message_index = length;
+    receive_index = length;
     command_receive = true;
 }
 
-void SerialHelper::GetMessage(uint8_t dest[], uint32_t* length)
+void SerialHelper::GetMessage(uint8_t dest[], uint8_t* length)
 {
     memcpy(dest, transmit_message, sizeof(uint8_t) * transmit_index);
     *length = transmit_index;
@@ -285,7 +303,7 @@ bool SerialHelper::IsBrake()
     return false;
 }
 
-uint8_t SerialHelper::Checksum(uint8_t data[], int length)
+uint8_t SerialHelper::Checksum(uint8_t data[], uint8_t length)
 {
     uint16_t sum = 0;
     

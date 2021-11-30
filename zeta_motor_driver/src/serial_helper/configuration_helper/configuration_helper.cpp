@@ -208,6 +208,7 @@ float ConfigurationHelper::BytesToFloat(uint8_t byte_h, uint8_t byte_l, int digi
     {
         return ((byte_h << 8) | byte_l) / 1000.0f;
     }
+    return 0;
 }
 
 uint16_t ConfigurationHelper::BytesToUInt16(uint8_t byte_h, uint8_t byte_l)

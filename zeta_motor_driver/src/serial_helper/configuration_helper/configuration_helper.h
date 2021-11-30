@@ -38,6 +38,8 @@
 #define BASE_ADDRESS_DECREASING_TIME_FACTORY  ADDRESS_OFFSET(BASE_ADDRESS_INCREASING_TIME_FACTORY)
 
 #define FACTORY_SET_STATE_TRUE                1U
+#define FLOAT_PRECISION_1DIGIT                1
+#define FLOAT_PRECISION_3DIGIT                3
 
 namespace zeta_motor_driver
 {

@@ -41,8 +41,8 @@
 
 #define FLOAT32_ZERO            0.0f
 
-#define DIGIT_VELOCITY          3
-#define DIGIT_RPM               1
+#define DIGIT_VELOCITY          FLOAT_PRECISION_3DIGIT
+#define DIGIT_RPM               FLOAT_PRECISION_1DIGIT
 
 #define MOTOR1_FORWARD          (0b01)
 #define MOTOR2_FORWARD          (0b10)
@@ -101,7 +101,7 @@ class SerialHelper : public ConfigurationHelper
         {
             ConfigurationHelper::Update();
             serial_speed    = ConfigurationHelper::GetBaudrate();
-            message_index   = 0;
+            receive_index   = 0;
             com_error       = ComError::no_error;
             monitoring_unit = MonitoringUnit::monitoring_mps;
             command_receive = false;
@@ -111,8 +111,8 @@ class SerialHelper : public ConfigurationHelper
         void    ReceiveData();    // from user
         void    ExecuteCommand();
         void    TransmitVelocity();
-        void    SetMessage(uint8_t[],uint32_t);
-        void    GetMessage(uint8_t[],uint32_t*);
+        void    SetMessage(uint8_t[],uint8_t);
+        void    GetMessage(uint8_t[],uint8_t*);
         bool    IsBrake();
         motor_state_t motor1_state;
         motor_state_t motor2_state;
@@ -121,8 +121,8 @@ class SerialHelper : public ConfigurationHelper
         int32_t  serial_speed;
         uint8_t  receive_message[RX_BUFFER_SIZE];
         uint8_t  transmit_message[TX_BUFFER_SIZE];
-        int16_t  transmit_index;
-        int16_t  message_index;
+        int8_t   transmit_index;
+        int8_t   receive_index;
         float    wheel_radius;
         bool     command_receive;
         
@@ -130,7 +130,7 @@ class SerialHelper : public ConfigurationHelper
         MonitoringUnit monitoring_unit;
 
         void     FlushReceiveMessage();
-        uint8_t  Checksum(uint8_t[],int);
+        uint8_t  Checksum(uint8_t[],uint8_t);
         bool     Run(uint8_t);
         bool     VerifyFormat();
         bool     VerifyLength();
