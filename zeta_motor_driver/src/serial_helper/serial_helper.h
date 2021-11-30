@@ -109,8 +109,8 @@ class SerialHelper : public ConfigurationHelper
         }
         void    Begin();
         void    ReceiveData();    // from user
-        void    ExecuteCommand();
-        void    TransmitVelocity();
+        bool    ExecuteCommand();
+        void    SetVelocityMessage();
         void    SetMessage(uint8_t[],uint8_t);
         void    GetMessage(uint8_t[],uint32_t*);
         bool    IsBrake();

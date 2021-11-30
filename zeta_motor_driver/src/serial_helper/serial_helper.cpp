@@ -15,7 +15,7 @@ void SerialHelper::ReceiveData()
 {
 }
 
-void SerialHelper::ExecuteCommand()
+bool SerialHelper::ExecuteCommand()
 {
     uint8_t pid = receive_message[0];
     if(command_receive)
@@ -29,8 +29,15 @@ void SerialHelper::ExecuteCommand()
             com_error = ComError::no_error;
         }
         command_receive = false;
+        FlushReceiveMessage();
+        return true;
     }
-    FlushReceiveMessage();
+    else
+    {
+        FlushReceiveMessage();
+        return false;
+    }
+    
 }
 
 bool SerialHelper::Run(uint8_t pid)
@@ -48,6 +55,12 @@ bool SerialHelper::Run(uint8_t pid)
         case ParameterID::pid_run_motor:
             if(receive_index != LENGTH_SET_VELOCITY)
             {
+                ReturnError();
+                break;
+            }
+            if(!motor1_state.runnable || !motor2_state.runnable)
+            {
+                ReturnError();
                 break;
             }
             if(SetVelocity())
@@ -63,6 +76,7 @@ bool SerialHelper::Run(uint8_t pid)
         case ParameterID::pid_brake_motor:
             if(receive_index != 1)
             {
+                ReturnError();
                 break;
             }
             if(BrakeMotor())
@@ -73,6 +87,7 @@ bool SerialHelper::Run(uint8_t pid)
         case ParameterID::pid_release_motor:
             if(receive_index != 1)
             {
+                ReturnError();
                 break;
             }
             if(ReleaseMotor())
@@ -83,41 +98,65 @@ bool SerialHelper::Run(uint8_t pid)
         case ParameterID::pid_configure_mode:
             if(receive_index != 1)
             {
+                ReturnError();
                 break;
             }
             SetConfigurable(true);
+            ReturnData();
             break;
         case ParameterID::pid_set_p_gain:
             gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
-                if(!ConfigurationHelper::SetPGain(gain))
+                if(ConfigurationHelper::SetPGain(gain))
+                {
+                    ReturnData();
+                }
+                else
                 {
                     ReturnError();
                 }
-                ReturnData();
+            }
+            else
+            {
+                ReturnError();
             }
             break;
         case ParameterID::pid_set_i_gain:
-            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_3DIGIT);
-            if(gain > 0.0f && gain <= (float(0xffff) / 1000.0f))
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
+            if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
-                if(!ConfigurationHelper::SetIGain(gain))
+                
+                if(ConfigurationHelper::SetIGain(gain))
+                {
+                    ReturnData();
+                }
+                else
                 {
                     ReturnError();
                 }
-                ReturnData();
+            }
+            else
+            {
+                ReturnError();
             }
             break;
         case ParameterID::pid_set_d_gain:
             gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
-                if(!ConfigurationHelper::SetDGain(gain))
+                if(ConfigurationHelper::SetDGain(gain))
+                {
+                    ReturnData();
+                }
+                else
                 {
                     ReturnError();
                 }
-                ReturnData();
+            }
+            else
+            {
+                ReturnError();
             }
             break;
         case ParameterID::pid_set_max_speed:
@@ -167,7 +206,7 @@ bool SerialHelper::SetMonitoringUnit()
     }
 }
 
-void SerialHelper::TransmitVelocity()
+void SerialHelper::SetVelocityMessage()
 {
     uint8_t dir = 0;
     uint8_t vel_byte[2] = {RECEIVE_NO_DATA,};
@@ -269,7 +308,17 @@ void SerialHelper::ReturnData()
 
 void SerialHelper::ReturnError()
 {
-    ;
+    uint8_t error_message[6];
+    const uint8_t temp_error_contents = 0x00;
+    error_message[0] = ERROR_CODE;
+    error_message[1] = receive_message[0];
+    error_message[2] = temp_error_contents;
+    error_message[3] = temp_error_contents;
+    error_message[4] = temp_error_contents;
+    error_message[5] = temp_error_contents;
+    memset(transmit_message, RECEIVE_NO_DATA, TX_BUFFER_SIZE);
+    memcpy(transmit_message, error_message, sizeof(uint8_t) * 6);
+    transmit_index = 6;
 }
 
 ////////////////////////////////////////////

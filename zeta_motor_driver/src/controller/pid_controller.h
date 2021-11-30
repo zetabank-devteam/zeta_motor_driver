@@ -4,10 +4,11 @@
 #include <stdint.h>
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
-#define MINIMUM_DUTY  80
+// #define MINIMUM_DUTY  80  // actual minimum speed(0.06m/s)
+#define MINIMUM_DUTY  1
 #define MAXIMUM_DUTY  600 // caution! carefully change this value for preventing overdrive of motor driver
 #define VERY_SMALL_FLOAT  0.001f
-#define VELOCITY_PROFILE_STEPS  30
+#define VELOCITY_PROFILE_STEPS  20
 #define MIN_VELOCITY_ERROR      0.002f
 #define PWM_FREQUENCY     5000UL // the most good wave form & performance(min 8cm/s available)
 // #define PWM_FREQUENCY     10000UL
@@ -40,10 +41,9 @@ class PidController
         {
             uint8_t          encoder_pin;
             volatile int32_t pulse_count;
-            volatile int32_t pulse_count_pre;
             Init()
             {
-                pulse_count = pulse_count_pre = 0;
+                pulse_count = 0;
             }
         }encoder_t;
         typedef struct
@@ -64,6 +64,10 @@ class PidController
             Init()
             {
                 vel_cmd = vel_cur = pps = 0.0f;
+                for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
+                {
+                    vel_cmd_profile[i] = 0.0f;
+                }
                 dir = MOTOR_NEUTRAL;
                 vel_step = 0;
                 duty = 0;
@@ -97,7 +101,7 @@ class PidController
         ~PidController() {}
         void Begin(motor_t,motor_t,pid_t);
         void SetMotorSpeed(float,float,bool = false);
-        void StopMotor();
+        void BrakeMotor();
         void SetGain(float,float,float);
         void SetIncreasingTime(uint16_t);
         void SetDecreasingTime(uint16_t);
@@ -119,7 +123,7 @@ class PidController
             /* feedback block */
             if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
             {
-                StopMotor();
+                BrakeMotor();
                 return;
             }
             ChangeDir();
@@ -144,18 +148,7 @@ class PidController
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty += pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd;
             /* profile generator block */
-            // @TODO add velocity profiling
-            // if(fabs(pid_motor1.err) < MIN_VELOCITY_ERROR && motor1.vel_step != (VELOCITY_PROFILE_STEPS - 1))
-            if(motor1.vel_step != (VELOCITY_PROFILE_STEPS - 1))
-            {
-                motor1.vel_step += 1;
-            }
-            // if(fabs(pid_motor1.err) < MIN_VELOCITY_ERROR && motor2.vel_step != (VELOCITY_PROFILE_STEPS - 1))
-            if(motor2.vel_step != (VELOCITY_PROFILE_STEPS - 1))
-            {
-                motor2.vel_step += 1;
-            }  
-            if(abs(motor1.duty) < MINIMUM_DUTY)
+            if(abs(motor1.duty) <= MINIMUM_DUTY)
             {
                 motor1.duty = MINIMUM_DUTY * motor1.dir;
                 if(pid_motor1.err * float(motor1.dir) < VERY_SMALL_FLOAT)
@@ -164,7 +157,7 @@ class PidController
                 }
                 motor1.state = MotorState::run;
             }
-            if(abs(motor1.duty) > MAXIMUM_DUTY)
+            else if(abs(motor1.duty) >= MAXIMUM_DUTY)
             {
                 motor1.duty = MAXIMUM_DUTY * motor1.dir;
                 if(pid_motor1.err * float(motor1.dir) > VERY_SMALL_FLOAT)
@@ -173,7 +166,7 @@ class PidController
                 }
                 motor1.state = MotorState::run;
             }
-            if(abs(motor2.duty) < MINIMUM_DUTY)
+            if(abs(motor2.duty) <= MINIMUM_DUTY)
             {
                 motor2.duty = MINIMUM_DUTY * motor2.dir;
                 if(pid_motor2.err * float(motor2.dir) < VERY_SMALL_FLOAT)
@@ -182,7 +175,7 @@ class PidController
                 }
                 motor2.state = MotorState::run;
             }
-            if(abs(motor2.duty) > MAXIMUM_DUTY)
+            else if(abs(motor2.duty) >= MAXIMUM_DUTY)
             {
                 motor2.duty = MAXIMUM_DUTY * motor2.dir;
                 if(pid_motor2.err * float(motor2.dir) > VERY_SMALL_FLOAT)
@@ -191,39 +184,34 @@ class PidController
                 }
                 motor2.state = MotorState::run;
             }
-            pid_motor1.err_int_pre = pid_motor1.err_int;
-            pid_motor2.err_int_pre = pid_motor2.err_int;
-            if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
+            /* stop condition */
+            if(fabs(motor1.vel_cmd_profile[motor1.vel_step]) < VERY_SMALL_FLOAT)
             {
-                motor1.duty = 0; // velocity profiling
+                motor1.duty = 0;
                 motor1.state = MotorState::stop;
             }
-            if(fabs(motor2.vel_cmd) < VERY_SMALL_FLOAT)
+            if(fabs(motor2.vel_cmd_profile[motor2.vel_step]) < VERY_SMALL_FLOAT)
             {
-                motor2.duty = 0; // velocity profiling
+                motor2.duty = 0;
                 motor2.state = MotorState::stop;
             }
-            if(runnable && (motor1.state != MotorState::brake && motor2.state != MotorState::brake))
+            if(motor1.vel_step != (VELOCITY_PROFILE_STEPS - 1))
             {
-                MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
-                MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
+                motor1.vel_step += 1;
             }
-            else
+            if(motor2.vel_step != (VELOCITY_PROFILE_STEPS - 1))
             {
-                MOT1_TIMER.pwm(motor1.pwm_pin, 0);
-                MOT2_TIMER.pwm(motor2.pwm_pin, 0);
-                pid_motor1.InitError();
-                pid_motor2.InitError();
-            }
-            //Serial1.println(motor1.duty / 500.0f);
-            // Serial.print(motor1.duty);Serial.print(", ");Serial.println(motor2.duty);
-            // static uint64_t cnt;
-            // // if(cnt++ % 2 == 0)
-            // {
-                Serial1.print(motor1.vel_cmd,3);Serial1.print(", ");
-            //     // Serial1.print(motor1.vel_cmd_profile[motor1.vel_step],3);Serial1.print(",");
-                Serial1.println(motor1.vel_cur,3);
-            // }
+                motor2.vel_step += 1;
+            }  
+            /* Run */
+            MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
+            MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
+            pid_motor1.err_int_pre = pid_motor1.err_int;
+            pid_motor2.err_int_pre = pid_motor2.err_int;
+            // Serial1.print(motor1.vel_cmd,3);Serial1.print(",");
+            // // Serial1.print(motor1.vel_cmd_profile[motor1.vel_step],3);Serial1.print(",");
+            // Serial1.print(float(abs(motor1.duty))/1024.0f,3);Serial1.print(",");
+            // Serial1.println(motor1.vel_cur,3);
         }
 
         void read_encoder1()
@@ -258,7 +246,6 @@ class PidController
         float     ppr;             // pulse per rotation
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
-        bool      runnable;
 
         float pps_to_velocity(float pps) __attribute__((always_inline))
         {
@@ -340,11 +327,13 @@ class PidController
             else
             {
                 count = 0;
-                runnable = true;
+                motor1.state = MotorState::ready;
+                motor2.state = MotorState::ready;
             }
             if(count == WHEEL_FLOATING_THRESHOLD)
             {
-                runnable = false;
+                motor1.state = MotorState::stop;
+                motor2.state = MotorState::stop;
             }
         }
 }; /* class PidController */

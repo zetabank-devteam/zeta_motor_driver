@@ -82,8 +82,8 @@ bool ConfigurationHelper::SetPGain(float gain)
 
 bool ConfigurationHelper::SetIGain(float gain)
 {
-    SetEEPROM(BASE_ADDRESS_I_GAIN, gain, 3);
-    i_gain = (EEPROM.read(BASE_ADDRESS_I_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_I_GAIN)) / 1000.0f;
+    SetEEPROM(BASE_ADDRESS_I_GAIN, gain, 1);
+    i_gain = (EEPROM.read(BASE_ADDRESS_I_GAIN + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_I_GAIN)) / 10.0f;
     return configurable;
 }
 
@@ -200,20 +200,22 @@ void ConfigurationHelper::FloatToBytes(uint8_t* byte_h, uint8_t* byte_l, float s
 
 float ConfigurationHelper::BytesToFloat(uint8_t byte_h, uint8_t byte_l, int digit)
 {
+    uint16_t val = (byte_h << 8) | byte_l;
     if(digit == 1)
     {
-        return ((byte_h << 8) | byte_l) / 10.0f;
+        return float(val) / 10.0f;
     }
     else if(digit == 3)
     {
-        return ((byte_h << 8) | byte_l) / 1000.0f;
+        return float(val) / 1000.0f;
     }
     return 0;
 }
 
 uint16_t ConfigurationHelper::BytesToUInt16(uint8_t byte_h, uint8_t byte_l)
 {
-    return ((byte_h << 8) | byte_l);
+    uint16_t val = (byte_h << 8) | byte_l;
+    return val;
 }
 
 void ConfigurationHelper::UInt16ToBytes(uint8_t* byte_h, uint8_t* byte_l, uint16_t src)

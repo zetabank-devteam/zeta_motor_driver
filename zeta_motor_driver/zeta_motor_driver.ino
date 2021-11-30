@@ -110,21 +110,33 @@ void TransmitVelocity()
     controller.GetVelocity(vel);
     serial_helper.motor1_state.vel_cur = vel[0];
     serial_helper.motor2_state.vel_cur = vel[1];
-    serial_helper.TransmitVelocity();
+    serial_helper.SetVelocityMessage();
 #ifndef NO_ROS
     serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
     serial_output_publisher.publish(&serial_output_msg);
+#else
+    uint8_t  receive_buf[RX_BUFFER_SIZE];
+    uint32_t receive_index;
+    serial_helper.GetMessage(receive_buf, &receive_index);
+    // Serial1.write(receive_buf, receive_index);
 #endif
     //Serial1.print(serial_helper.motor1_state.vel_cur,3);Serial1.print(", ");Serial1.println(serial_helper.motor2_state.vel_cur,3);
 }
 
 void ExecuteCommand()
 {
-    serial_helper.ExecuteCommand();
+    if(serial_helper.ExecuteCommand())
+    {
 #ifndef NO_ROS
-    serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
-    serial_output_publisher.publish(&serial_output_msg);
+        serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
+        serial_output_publisher.publish(&serial_output_msg);
+#else
+        uint8_t  receive_buf[RX_BUFFER_SIZE];
+        uint32_t receive_index;
+        serial_helper.GetMessage(receive_buf,&receive_index);
+        CONTROL_STREAM.write(receive_buf,receive_index);
 #endif
+    }
 }
 
 
@@ -133,35 +145,47 @@ void loop()
     RunPeriodicEvent();
 }
 
-void serialEvent1()
-{
-    //serial_helper.ReceiveData();
-}
-
 #ifdef NO_ROS
+#if (CONTROL_STREAM == Serial)
 void serialEvent()
 {
     static uint8_t data[6];
     static int     data_length = 0;
-    while(Serial.available())
+    while(CONTROL_STREAM.available())
     {
-        data[data_length++] = Serial.read();
+        data[data_length++] = CONTROL_STREAM.read();
+        delay(1);
     }
-    if(data_length == 6)
+    //if(data_length == 6)
     {
-        Serial.write(data, data_length);
         serial_helper.SetMessage(data, data_length);
         data_length = 0;
         memset(data,0xff,6);
     }
-    
 }
-
+#elif (CONTROL_STREAM == Serial1)
+void serialEvent1()
+{
+    static uint8_t data[6];
+    static int     data_length = 0;
+    while(CONTROL_STREAM.available())
+    {
+        data[data_length++] = CONTROL_STREAM.read();
+        delay(1);
+    }
+    //if(data_length == 6)
+    {
+        serial_helper.SetMessage(data, data_length);
+        data_length = 0;
+        memset(data,0xff,6);
+    }
+}
+#endif /* CONTROL_STREAM */
 #else
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
 {
     serial_helper.SetMessage(msg.data, (uint8_t)msg.data_length);
 }
-#endif
+#endif /* NO_ROS */
 
 /* zeta_motor_driver.ino */

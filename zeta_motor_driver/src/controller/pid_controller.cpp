@@ -25,29 +25,26 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
     decreasing_time = 10;
-    runnable = true;
+    motor1.state = MotorState::ready;
+    motor2.state = MotorState::ready;
 }
 
 
 
-void PidController::StopMotor()
+void PidController::BrakeMotor()
 {
-    motor1.vel_cmd = 0.0f;
-    motor2.vel_cmd = 0.0f;
-    motor1.duty    = 0;
-    motor2.duty    = 0;
     motor1.dir     *= -1;
     motor2.dir     *= -1;
     ChangeDir();
-    MOT1_TIMER.pwm(motor1.pwm_pin, 1024);
-    MOT2_TIMER.pwm(motor2.pwm_pin, 1024);
+    MOT1_TIMER.pwm(motor1.pwm_pin, MAXIMUM_DUTY);
+    MOT2_TIMER.pwm(motor2.pwm_pin, MAXIMUM_DUTY);
     delay(decreasing_time);
     MOT1_TIMER.pwm(motor1.pwm_pin, 0);
     MOT2_TIMER.pwm(motor2.pwm_pin, 0);
-    motor1.dir = MOTOR_NEUTRAL;
-    motor2.dir = MOTOR_NEUTRAL;
-    motor1.state = MotorState::brake;
-    motor2.state = MotorState::brake;
+    motor1.Init();
+    motor2.Init();
+    pid_motor1.InitError();
+    pid_motor2.InitError();
 }
 
 void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool brake = false)
@@ -57,18 +54,14 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
 #endif
     if(brake)
     {
-        motor1.vel_cmd = 0.0f;
-        motor2.vel_cmd = 0.0f;
-        for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
-        {
-            motor1.vel_cmd_profile[i] = 0.0f;
-            motor2.vel_cmd_profile[i] = 0.0f;
-        }
-        motor1.vel_step = 0;
-        motor2.vel_step = 0;
+        motor1.Init();
+        motor2.Init();
         motor1.state = MotorState::brake;
         motor2.state = MotorState::brake;
-        return;
+    }
+    if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
+    {
+        return; // if brake before, no velocity change
     }
     if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
