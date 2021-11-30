@@ -1,5 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_CONTROLLER_H_
 #define ZETA_MOTOR_DRIVER_CONTROLLER_H_
+#include "./pre_define.h"
 #include <stdint.h>
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
@@ -15,8 +16,6 @@
 #define MOTOR_NEUTRAL      0
 // #define ENABLE_FLOAT_SENSING
 #define WHEEL_FLOATING_THRESHOLD  5
-// #define TEST_ROBOT
-// #define SERIAL_DEBUG
 #ifdef TEST_ROBOT
 #define MOT1_TIMER  Timer3
 #define MOT2_TIMER  Timer1
