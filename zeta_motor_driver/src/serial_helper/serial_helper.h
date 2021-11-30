@@ -112,7 +112,7 @@ class SerialHelper : public ConfigurationHelper
         void    ExecuteCommand();
         void    TransmitVelocity();
         void    SetMessage(uint8_t[],uint8_t);
-        void    GetMessage(uint8_t[],uint8_t*);
+        void    GetMessage(uint8_t[],uint32_t*);
         bool    IsBrake();
         motor_state_t motor1_state;
         motor_state_t motor2_state;
@@ -121,8 +121,8 @@ class SerialHelper : public ConfigurationHelper
         int32_t  serial_speed;
         uint8_t  receive_message[RX_BUFFER_SIZE];
         uint8_t  transmit_message[TX_BUFFER_SIZE];
-        int8_t   transmit_index;
-        int8_t   receive_index;
+        uint8_t  transmit_index;
+        uint8_t  receive_index;
         float    wheel_radius;
         bool     command_receive;
         

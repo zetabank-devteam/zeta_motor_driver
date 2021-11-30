@@ -160,7 +160,7 @@ void serialEvent()
 #else
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
 {
-    serial_helper.SetMessage(msg.data, msg.data_length);
+    serial_helper.SetMessage(msg.data, (uint8_t)msg.data_length);
 }
 #endif
 

@@ -1,6 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_CONTROLLER_H_
 #define ZETA_MOTOR_DRIVER_CONTROLLER_H_
-#include "./pre_define.h"
+#include "../pre_define.h"
 #include <stdint.h>
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"

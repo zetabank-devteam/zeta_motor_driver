@@ -1,6 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_PIN_CONFIGURATION_H_
 #define ZETA_MOTOR_DRIVER_PIN_CONFIGURATION_H_
-#include "./pre_define.h"
+#include "../pre_define.h"
 #ifndef TEST_ROBOT
 #define MOT1_CW_PIN       8
 #define MOT1_CCW_PIN      9

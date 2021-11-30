@@ -35,6 +35,7 @@ void SerialHelper::ExecuteCommand()
 
 bool SerialHelper::Run(uint8_t pid)
 {
+    float gain = 0.0f;
     switch(static_cast<ParameterID>(pid))
     {
         case ParameterID::pid_monitoring:
@@ -87,7 +88,7 @@ bool SerialHelper::Run(uint8_t pid)
             SetConfigurable(true);
             break;
         case ParameterID::pid_set_p_gain:
-            float gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
                 if(!ConfigurationHelper::SetPGain(gain))
@@ -98,7 +99,7 @@ bool SerialHelper::Run(uint8_t pid)
             }
             break;
         case ParameterID::pid_set_i_gain:
-            float gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_3DIGIT);
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_3DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 1000.0f))
             {
                 if(!ConfigurationHelper::SetIGain(gain))
@@ -109,7 +110,7 @@ bool SerialHelper::Run(uint8_t pid)
             }
             break;
         case ParameterID::pid_set_d_gain:
-            float gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
             if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
             {
                 if(!ConfigurationHelper::SetDGain(gain))
@@ -288,7 +289,7 @@ void SerialHelper::SetMessage(uint8_t msg[], uint8_t length)
     command_receive = true;
 }
 
-void SerialHelper::GetMessage(uint8_t dest[], uint8_t* length)
+void SerialHelper::GetMessage(uint8_t dest[], uint32_t* length)
 {
     memcpy(dest, transmit_message, sizeof(uint8_t) * transmit_index);
     *length = transmit_index;
