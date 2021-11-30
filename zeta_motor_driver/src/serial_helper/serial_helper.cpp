@@ -2,76 +2,26 @@
 
 using namespace zeta_motor_driver;
 
+#include <ros.h>
+extern ros::NodeHandle nh;
+
 void SerialHelper::Begin()
 {
-    stream.begin(serial_speed);
+    motor1_state.runnable = true;
+    motor2_state.runnable = true;
 }
 
 void SerialHelper::ReceiveData()
 {
-    while(COM_PORT.available())
-    {
-        receive_message[message_index] = COM_PORT.read();
-        if(receive_message[message_index] == END_BYTE2)
-        {
-            message_index++;
-            command_receive = true;
-            break;
-        }
-        message_index++;
-        if(message_index == RX_BUFFER_SIZE)
-        {
-            memset(receive_message,'\0',RX_BUFFER_SIZE);
-            message_index = 0;
-            break;
-        }
-    }
 }
 
-void SerialHelper::TransmittData()
+bool SerialHelper::ExecuteCommand()
 {
-    uint8_t transmitt_message[TX_BUFFER_SIZE] = {0x00,};
-    int     transmitt_index = 0;
-    transmitt_message[transmitt_index++] = START_BYTE1;
-    transmitt_message[transmitt_index++] = START_BYTE2;
-    if(monitoring)
-    {   
-        uint8_t dir = 0;
-        uint8_t vel_byte[2] = {0x00,};
-        transmitt_message[transmitt_index++] = LENGTH_MONITORING;
-        transmitt_message[transmitt_index++] = 0x00; // monotoring mode pid
-        transmitt_message[transmitt_index++] = static_cast<uint8_t>(monitoring_mode);
-        if(motor1_state.vel_cur > 0.0)
-        {
-            dir |= 0b01;
-        }
-        if(motor2_state.vel_cur > 0.0)
-        {
-            dir |= 0b10;
-        }
-        transmitt_message[transmitt_index++] = dir;
-        FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor1_state.vel_cur,3);
-        transmitt_message[transmitt_index++] = vel_byte[1];
-        transmitt_message[transmitt_index++] = vel_byte[0];
-        FloatToBytes(&(vel_byte[1]),&(vel_byte[0]),motor2_state.vel_cur,3);
-        transmitt_message[transmitt_index++] = vel_byte[1];
-        transmitt_message[transmitt_index++] = vel_byte[0];
-        transmitt_message[transmitt_index] = Checksum(&(transmitt_message[POS_LENGTH]), transmitt_index);
-        transmitt_index++;
-    }
-    transmitt_message[transmitt_index++] = END_BYTE1;
-    transmitt_message[transmitt_index++] = END_BYTE2;
-    stream.write(transmitt_message,transmitt_index);
-}
-
-void SerialHelper::ExecuteCommand()
-{
-    uint8_t pid;
+    uint8_t pid = receive_message[0];
     if(command_receive)
     {
-        if(VerifyFormat() && VerifyLength() && VerifyChecksum())
+        if(pid != static_cast<uint8_t>(ParameterID::pid_last))
         {
-            pid = receive_message[POS_PID];
             Run(pid);
         }
         else
@@ -79,151 +29,331 @@ void SerialHelper::ExecuteCommand()
             com_error = ComError::no_error;
         }
         command_receive = false;
+        FlushReceiveMessage();
+        return true;
     }
-    FlushReceiveMessage();
+    else
+    {
+        FlushReceiveMessage();
+        return false;
+    }
+    
 }
 
 bool SerialHelper::Run(uint8_t pid)
 {
+    float gain = 0.0f;
     switch(static_cast<ParameterID>(pid))
     {
-        case ParameterID::pid_set_velocity:
-            SetVelocity();
+        case ParameterID::pid_monitoring:
+            /*if(SetMonitoringUnit())
+            {
+                ReturnData();
+            }*/
+            
+            break;
+        case ParameterID::pid_run_motor:
+            if(receive_index != LENGTH_SET_VELOCITY)
+            {
+                ReturnError();
+                break;
+            }
+            if(!motor1_state.runnable || !motor2_state.runnable)
+            {
+                ReturnError();
+                break;
+            }
+            if(SetVelocity())
+            {
+                ReturnData();
+            }
+            else
+            {
+                ReturnError();
+            }
+            SetConfigurable(false);
+            break;
+        case ParameterID::pid_brake_motor:
+            if(receive_index != 1)
+            {
+                ReturnError();
+                break;
+            }
+            if(BrakeMotor())
+            {
+                ReturnData();
+            }
+            break;
+        case ParameterID::pid_release_motor:
+            if(receive_index != 1)
+            {
+                ReturnError();
+                break;
+            }
+            if(ReleaseMotor())
+            {
+                ReturnData();
+            }
+            break;
+        case ParameterID::pid_configure_mode:
+            if(receive_index != 1)
+            {
+                ReturnError();
+                break;
+            }
+            SetConfigurable(true);
             ReturnData();
             break;
+        case ParameterID::pid_set_p_gain:
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
+            if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
+            {
+                if(ConfigurationHelper::SetPGain(gain))
+                {
+                    ReturnData();
+                }
+                else
+                {
+                    ReturnError();
+                }
+            }
+            else
+            {
+                ReturnError();
+            }
+            break;
+        case ParameterID::pid_set_i_gain:
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
+            if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
+            {
+                
+                if(ConfigurationHelper::SetIGain(gain))
+                {
+                    ReturnData();
+                }
+                else
+                {
+                    ReturnError();
+                }
+            }
+            else
+            {
+                ReturnError();
+            }
+            break;
+        case ParameterID::pid_set_d_gain:
+            gain = BytesToFloat(receive_message[1], receive_message[2], FLOAT_PRECISION_1DIGIT);
+            if(gain > 0.0f && gain <= (float(0xffff) / 10.0f))
+            {
+                if(ConfigurationHelper::SetDGain(gain))
+                {
+                    ReturnData();
+                }
+                else
+                {
+                    ReturnError();
+                }
+            }
+            else
+            {
+                ReturnError();
+            }
+            break;
+        case ParameterID::pid_set_max_speed:
+            //SetMaxSpeed();
+            ReturnData();
+            break;
+        case ParameterID::pid_set_min_speed:
+            //SetMinSpeed();
+            ReturnData();
+            break;
+        case ParameterID::pid_set_ppr:
+            //SetPPR();
+            ReturnData();
+            break;
+        case ParameterID::pid_set_wheel_radius:
+            //SetWheelRadius();
+            ReturnData();
+            break;
+        case ParameterID::pid_set_increasing_time:
+            //SetIncreasingTime();
+            ReturnData();
+            break;
+        case ParameterID::pid_set_decreasing_time:
+            // if(SetDecreasingTime())
+            // {
+            //     ReturnData();
+            // }
+            break;
+        case ParameterID::pid_get_param:
+            // GetParam();
         default:
             com_error = ComError::error_unknown_pid;
             return false;
     }
     return true;
 }
+////////////////////////////////////////////
+// Actual execution codes here
+////////////////////////////////////////////
+bool SerialHelper::SetMonitoringUnit()
+{
+    //if(receive_index != 2)
+    if(receive_message[POS_MONITORING_UNIT] < static_cast<uint8_t>(MonitoringUnit::monitoring_last))
+    {
+        monitoring_unit = static_cast<MonitoringUnit>(receive_message[POS_MONITORING_UNIT]);
+        return true;
+    }
+}
 
-void SerialHelper::SetVelocity()
+void SerialHelper::SetVelocityMessage()
+{
+    uint8_t dir = 0;
+    uint8_t vel_byte[2] = {RECEIVE_NO_DATA,};
+    memset(transmit_message, RECEIVE_NO_DATA, sizeof(uint8_t) * TX_BUFFER_SIZE);
+    transmit_index = 0;
+    if(monitoring_unit == MonitoringUnit::monitoring_mps)
+    {
+        transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
+        transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
+        if(motor1_state.vel_cur > FLOAT32_ZERO)
+        {
+            dir |= MOTOR1_FORWARD;
+        }
+        if(motor2_state.vel_cur > FLOAT32_ZERO)
+        {
+            dir |= MOTOR2_FORWARD;
+        }
+        transmit_message[transmit_index++] = dir;
+        FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]),motor1_state.vel_cur, DIGIT_VELOCITY);
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+        FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur, DIGIT_VELOCITY);
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+    }
+    else if(monitoring_unit == MonitoringUnit::monitoring_rpm)
+    {
+        transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
+        transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
+        if(motor1_state.vel_cur > FLOAT32_ZERO)
+        {
+            dir |= MOTOR1_FORWARD;
+        }
+        if(motor2_state.vel_cur > FLOAT32_ZERO)
+        {
+            dir |= MOTOR2_FORWARD;
+        }
+        transmit_message[transmit_index++] = dir;
+        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor1_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+    }
+}
+
+bool SerialHelper::SetVelocity()
 {
     float vel1, vel2;
     int dir1 = MOTOR_BACKWARD;
     int dir2 = MOTOR_BACKWARD;
-    if((receive_message[4] & 0b1))
+    if(receive_index != LENGTH_SET_VELOCITY)
+    {
+        return false;
+    }
+    if((receive_message[POS_DIR] & MOTOR1_FORWARD))
     {
         dir1 = MOTOR_FORWARD;
     }
-    if((receive_message[4] & (0b1 << 1)))
+    if((receive_message[POS_DIR] & MOTOR2_FORWARD))
     {
         dir2 = MOTOR_FORWARD;
     }
-    motor1_state.vel_cmd = ByteToFloat(receive_message[7], receive_message[8], 3) * float(dir1);
-    motor2_state.vel_cmd = ByteToFloat(receive_message[5], receive_message[6], 3) * float(dir2);
+    motor1_state.vel_cmd = BytesToFloat(receive_message[POS_MOT1_VEL_H], receive_message[POS_MOT1_VEL_L], DIGIT_VELOCITY) * float(dir1);
+    motor2_state.vel_cmd = BytesToFloat(receive_message[POS_MOT2_VEL_H], receive_message[POS_MOT2_VEL_L], DIGIT_VELOCITY) * float(dir2);
 #ifdef SERIAL_DEBUG
-    Serial.print("cmd vel: ");Serial.print(motor1_state.vel_cmd,3);Serial.print(", ");Serial.println(motor2_state.vel_cmd,3);
+    DEBUG_PORT.print("cmd vel: ");DEBUG_PORT.print(motor1_state.vel_cmd,3);DEBUG_PORT.print(", ");DEBUG_PORT.println(motor2_state.vel_cmd,3);
 #endif
+    return true;
+}
+
+bool SerialHelper::BrakeMotor()
+{
+    motor1_state.vel_cmd  = 0.0f;
+    motor2_state.vel_cmd  = 0.0f;
+    motor1_state.runnable = false;
+    motor2_state.runnable = false;
+    return true;
+}
+
+bool SerialHelper::ReleaseMotor()
+{
+    motor1_state.runnable = true;
+    motor2_state.runnable = true;
+    return true;
 }
 
 void SerialHelper::ReturnData()
 {
-    uint8_t transmitt_message[TX_BUFFER_SIZE] = {0,};
-    int     transmitt_index = 0;
-    transmitt_message[transmitt_index++] = START_BYTE1;
-    transmitt_message[transmitt_index++] = START_BYTE2;
-    transmitt_message[transmitt_index++] = receive_message[POS_LENGTH];
-    transmitt_message[transmitt_index++] = RETURN_CODE;
-    for(int i = POS_PID; i < receive_message[POS_LENGTH] + POS_PID; i++)
+    memset(transmit_message, RECEIVE_NO_DATA, TX_BUFFER_SIZE);
+    transmit_index = 0;
+    transmit_message[transmit_index++] = RETURN_CODE;
+    for(int i = 0; i < receive_index; i++)
     {
-        transmitt_message[transmitt_index++] = receive_message[i];
+        transmit_message[transmit_index++] = receive_message[i];
     }
-    transmitt_message[transmitt_index] = Checksum(&(transmitt_message[POS_LENGTH]),transmitt_index);
-    transmitt_index++;
-    transmitt_message[transmitt_index++] = END_BYTE1;
-    transmitt_message[transmitt_index++] = END_BYTE2;
-    stream.write(transmitt_message,transmitt_index);
 }
 
+void SerialHelper::ReturnError()
+{
+    uint8_t error_message[6];
+    const uint8_t temp_error_contents = 0x00;
+    error_message[0] = ERROR_CODE;
+    error_message[1] = receive_message[0];
+    error_message[2] = temp_error_contents;
+    error_message[3] = temp_error_contents;
+    error_message[4] = temp_error_contents;
+    error_message[5] = temp_error_contents;
+    memset(transmit_message, RECEIVE_NO_DATA, TX_BUFFER_SIZE);
+    memcpy(transmit_message, error_message, sizeof(uint8_t) * 6);
+    transmit_index = 6;
+}
+
+////////////////////////////////////////////
+// utilities here
+////////////////////////////////////////////
 void SerialHelper::FlushReceiveMessage()
 {
-    memset(receive_message, '\0', RX_BUFFER_SIZE);
-    message_index = 0;
+    memset(receive_message, RECEIVE_NO_DATA, RX_BUFFER_SIZE);
+    receive_index = 0;
+    receive_message[0] = static_cast<uint8_t>(ParameterID::pid_last);
 }
 
-bool SerialHelper::VerifyFormat()
+void SerialHelper::SetMessage(uint8_t msg[], uint8_t length)
 {
-    if((receive_message[0] != START_BYTE1) || (receive_message[1] != START_BYTE2) ||
-        (receive_message[message_index - 2] != END_BYTE1) || (receive_message[message_index - 1] != END_BYTE2))
-    {
-#ifdef SERIAL_DEBUG
-        Serial.println("[error] Mismatch format.");
-#endif
-        com_error = ComError::error_mismatch_format;
-        return false;
-    }
-    return true;
+    memcpy(receive_message, msg, sizeof(uint8_t) * length);
+    receive_index = length;
+    command_receive = true;
 }
 
-bool SerialHelper::VerifyLength()
+void SerialHelper::GetMessage(uint8_t dest[], uint32_t* length)
 {
-    if(receive_message[POS_LENGTH] != message_index - (POS_LENGTH + POS_CHECKSUM + 1))
-    {
-        com_error = ComError::error_mismatch_length;
-#ifdef SERIAL_DEBUG
-        Serial.print("[error] Mismatch length. Expected length is ");Serial.print(receive_message[POS_LENGTH],HEX);
-        Serial.print(" receive one is ");Serial.println(message_index - (POS_LENGTH + POS_CHECKSUM + 1),HEX);
-#endif
-        return false;
-    }
-    return true;
+    memcpy(dest, transmit_message, sizeof(uint8_t) * transmit_index);
+    *length = transmit_index;
 }
 
-bool SerialHelper::VerifyChecksum()
+bool SerialHelper::IsBrake()
 {
-    if(Checksum(&(receive_message[POS_LENGTH]),message_index - (POS_LENGTH + POS_CHECKSUM)) != receive_message[message_index - POS_CHECKSUM])
+    if(!motor1_state.runnable || !motor2_state.runnable)
     {
-#ifdef SERIAL_DEBUG
-        Serial.print("[error] Mismatch checksum. Expected sum is ");Serial.print(Checksum(&(receive_message[POS_LENGTH]),message_index - (POS_LENGTH + POS_CHECKSUM)),HEX);
-        Serial.print(" receive one is ");Serial.println(receive_message[message_index - POS_CHECKSUM],HEX);
-#endif
-        com_error = ComError::error_mismatch_checksum;
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
-float SerialHelper::ByteToFloat(uint8_t byte_h, uint8_t byte_l, int digit)
-{
-    if(digit == 1)
-    {
-        return (byte_h * 256 + byte_l) / 10.0f;
-    }
-    else if(digit == 3)
-    {
-        return (byte_h * 256 + byte_l) / 1000.0f;
-    }
-}
-
-uint16_t SerialHelper::ByteToUInt16(uint8_t byte_h, uint8_t byte_l)
-{
-    return (byte_h * 256 + byte_l);
-}
-
-void SerialHelper::FloatToBytes(uint8_t* byte_h, uint8_t* byte_l, float src, int digit)
-{
-    uint16_t two_bytes;
-    src = fabs(src);
-    if(digit == 1)
-    {
-        two_bytes = uint16_t(src * 10.0f);
-    }
-    else if(digit == 3)
-    {
-        two_bytes = uint16_t(src * 1000.0f);
-    }
-    UInt16ToBytes(byte_h, byte_l, two_bytes);
-}
-
-void SerialHelper::UInt16ToBytes(uint8_t* byte_h, uint8_t* byte_l, uint16_t src)
-{
-    *byte_l = src & 0x00ff;
-    *byte_h = (src & 0xff00) >> 8;
-}
-
-uint8_t SerialHelper::Checksum(uint8_t data[], int length)
+uint8_t SerialHelper::Checksum(uint8_t data[], uint8_t length)
 {
     uint16_t sum = 0;
     

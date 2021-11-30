@@ -20,77 +20,62 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     pinMode(motor2.ccw_pin,   OUTPUT);
     pinMode(motor2.float_pin, INPUT_PULLUP);
     pinMode(motor2.encoder.encoder_pin, INPUT);
-    Timer1.initialize(1000000/PWM_FREQUENCY);
-    Timer3.initialize(1000000/PWM_FREQUENCY);
-    Timer3.pwm(motor1.pwm_pin,0);
-    Timer1.pwm(motor2.pwm_pin,0);
+    MOT1_TIMER.initialize(1000000/PWM_FREQUENCY);
+    MOT2_TIMER.initialize(1000000/PWM_FREQUENCY);
+    MOT1_TIMER.pwm(motor1.pwm_pin,0);
+    MOT2_TIMER.pwm(motor2.pwm_pin,0);
     decreasing_time = 10;
-    runnable = true;
+    motor1.state = MotorState::ready;
+    motor2.state = MotorState::ready;
 }
 
-PidController::PidController()
-{}
 
-void PidController::StopMotor()
+
+void PidController::BrakeMotor()
 {
-    motor1.vel_cmd = 0.0f;
-    motor2.vel_cmd = 0.0f;
-    motor1.duty    = 0;
-    motor2.duty    = 0;
     motor1.dir     *= -1;
     motor2.dir     *= -1;
     ChangeDir();
-    Timer3.pwm(motor1.pwm_pin, 1024);
-    Timer1.pwm(motor2.pwm_pin, 1024);
+    MOT1_TIMER.pwm(motor1.pwm_pin, MAXIMUM_DUTY);
+    MOT2_TIMER.pwm(motor2.pwm_pin, MAXIMUM_DUTY);
     delay(decreasing_time);
-    Timer3.pwm(motor1.pwm_pin, 0);
-    Timer1.pwm(motor2.pwm_pin, 0);
-    motor1.dir = MOTOR_NEUTRAL;
-    motor2.dir = MOTOR_NEUTRAL;
-    motor1.state = MotorState::brake;
-    motor2.state = MotorState::brake;
+    MOT1_TIMER.pwm(motor1.pwm_pin, 0);
+    MOT2_TIMER.pwm(motor2.pwm_pin, 0);
+    motor1.Init();
+    motor2.Init();
+    pid_motor1.InitError();
+    pid_motor2.InitError();
 }
 
-void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2)
+void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool brake = false)
 {
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
+    if(brake)
+    {
+        motor1.Init();
+        motor2.Init();
+        motor1.state = MotorState::brake;
+        motor2.state = MotorState::brake;
+    }
+    if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
+    {
+        return; // if brake before, no velocity change
+    }
+    if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
+    {
+        return; // if no speed change
+    }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
-    if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
+    for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
     {
-        motor1.dir = MOTOR_NEUTRAL; // if zero input
-        pid_motor1.InitError();
+        motor1.vel_cmd_profile[i] = motor1.vel_cur + (motor1.vel_cmd - motor1.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
+        motor2.vel_cmd_profile[i] = motor2.vel_cur + (motor2.vel_cmd - motor2.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
     }
-    else if(motor1.vel_cmd < 0.0)
-    {
-        motor1.dir = MOTOR_BACKWARD;
-    }
-    else
-    {
-        motor1.dir = MOTOR_FORWARD;
-    }
-    if(fabs(motor2.vel_cmd) < VERY_SMALL_FLOAT)
-    {
-        motor2.dir = MOTOR_NEUTRAL; // if zero input
-        pid_motor2.InitError();
-    }
-    else if(motor2.vel_cmd < 0.0)
-    {
-        motor2.dir = MOTOR_BACKWARD;
-    }
-    else
-    {
-        motor2.dir = MOTOR_FORWARD;
-    }
-    //ChangeDir();
-    //ControlVel();
-    /*
-     * @TODO add output profiler for mapping vel_cur with the real velocity
-     * ex) (-) to (+), (-) to 0 within 1/2 of increasing time and 0 to (+) within 1/2 increasing time
-    */
-    
+    motor1.vel_step = 0;
+    motor2.vel_step = 0;
     //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
 }
 

@@ -1,27 +1,54 @@
 #ifndef ZETA_MOTOR_DRIVER_SERIAL_HELPER_H_
 #define ZETA_MOTOR_DRIVER_SERIAL_HELPER_H_
 #include "configuration_helper/configuration_helper.h"
-#include "../controller/pid_controller.h"
 
 #include <HardwareSerial.h>
+#define DEBUG_PORT  Serial1
 // #define SERIAL_DEBUG
-#define COM_PORT        Serial1
-#define SERIAL_SPEED    115200 // if too slow, print take too long (print() disables interrupt!)
-#define TX_BUFFER_SIZE  16
-#define RX_BUFFER_SIZE  16
+#define SERIAL_SPEED            115200 // if too slow, print take too long (print() disables interrupt!)
+#define TX_BUFFER_SIZE          16
+#define RX_BUFFER_SIZE          16
 
 /* comm */
-#define START_BYTE1     0xAA
-#define START_BYTE2     0xBB
-#define END_BYTE1       0xDD
-#define END_BYTE2       0x55
-#define POS_LENGTH      2
-#define POS_CHECKSUM    3
-#define POS_PID         3
-#define POS_DATA_START  4
-#define RETURN_CODE     0x60
+// #define START_BYTE1             0xAA
+// #define START_BYTE2             0xBB
+// #define END_BYTE1               0xDD
+// #define END_BYTE2               0x55
+#define RECEIVE_NO_DATA         0x00
 
-#define LENGTH_MONITORING  7
+// #define POS_START_BYTE1         0
+// #define POS_START_BYTE2         1
+// #define POS_LENGTH              2
+// #define POS_CHECKSUM            3
+#define POS_PID                 0
+// #define POS_DATA_START          4
+
+#define MOTOR_FORWARD           1
+#define MOTOR_BACKWARD          -1
+#define POS_MONITORING_UNIT     1
+#define POS_DIR                 1
+#define POS_VEL_H               0
+#define POS_VEL_L               1
+#define POS_MOT1_VEL_H          4
+#define POS_MOT1_VEL_L          5
+#define POS_MOT2_VEL_H          2
+#define POS_MOT2_VEL_L          3
+
+#define RETURN_CODE             0x60
+#define ERROR_CODE              0x90
+
+#define LENGTH_MONITORING       7
+
+#define FLOAT32_ZERO            0.0f
+
+#define DIGIT_VELOCITY          FLOAT_PRECISION_3DIGIT
+#define DIGIT_RPM               FLOAT_PRECISION_1DIGIT
+
+#define MOTOR1_FORWARD          (0b01)
+#define MOTOR2_FORWARD          (0b10)
+
+#define LENGTH_SET_MONITORING    2
+#define LENGTH_SET_VELOCITY      6
 
 namespace zeta_motor_driver
 {
@@ -31,7 +58,7 @@ class SerialHelper : public ConfigurationHelper
     {
         float vel_cmd;
         float vel_cur;
-        PidController::MotorState motor_state;
+        bool  runnable;
     }motor_state_t;
     enum class ComError : uint8_t
     {
@@ -44,58 +71,82 @@ class SerialHelper : public ConfigurationHelper
     enum class ParameterID : uint8_t
     {
         pid_monitoring = 0,
-        pid_set_velocity,
+        pid_run_motor,
+        pid_brake_motor,
+        pid_release_motor,
+        pid_configure_mode,
+        pid_set_p_gain,
+        pid_set_i_gain,
+        pid_set_d_gain,
+        pid_set_max_speed,
+        pid_set_min_speed,
+        pid_set_ppr,
+        pid_set_wheel_radius,
+        pid_set_increasing_time,
+        pid_set_decreasing_time,
+        pid_get_param,
         pid_imu = 61,
         pid_sonar,
-        pid_last,
+        pid_last = 0xff,
     };
-    enum class MonitoringMode : uint8_t
+    enum class MonitoringUnit : uint8_t
     {
-        monitoring_vel = 0,
+        monitoring_mps = 0,
         monitoring_rpm,
+        monitoring_last,
     };
+    
     public:
-        SerialHelper() : stream(COM_PORT)
+        SerialHelper()
         {
             ConfigurationHelper::Update();
-            serial_speed = ConfigurationHelper::GetBaudrate();
-            message_index = 0;
-            com_error = ComError::no_error;
-            monitoring_mode = MonitoringMode::monitoring_vel;
+            serial_speed    = ConfigurationHelper::GetBaudrate();
+            receive_index   = 0;
+            com_error       = ComError::no_error;
+            monitoring_unit = MonitoringUnit::monitoring_mps;
             command_receive = false;
-            monitoring = true;
+            wheel_radius    = ConfigurationHelper::GetWheelRadius();
         }
-        void Begin();
-        void ReceiveData();    // from user
-        void ExecuteCommand();
-        void TransmittData();
+        void    Begin();
+        void    ReceiveData();    // from user
+        bool    ExecuteCommand();
+        void    SetVelocityMessage();
+        void    SetMessage(uint8_t[],uint8_t);
+        void    GetMessage(uint8_t[],uint32_t*);
+        bool    IsBrake();
         motor_state_t motor1_state;
         motor_state_t motor2_state;
     private:
         HardwareSerial& stream;
         int32_t  serial_speed;
         uint8_t  receive_message[RX_BUFFER_SIZE];
-        int16_t  message_index;
+        uint8_t  transmit_message[TX_BUFFER_SIZE];
+        uint8_t  transmit_index;
+        uint8_t  receive_index;
+        float    wheel_radius;
         bool     command_receive;
-        bool     monitoring;
         
         ComError       com_error;
-        MonitoringMode monitoring_mode;
+        MonitoringUnit monitoring_unit;
 
         void     FlushReceiveMessage();
-        uint8_t  Checksum(uint8_t[],int);
+        uint8_t  Checksum(uint8_t[],uint8_t);
         bool     Run(uint8_t);
-        float    ByteToFloat(uint8_t,uint8_t,int);
-        uint16_t ByteToUInt16(uint8_t,uint8_t);
-        void     FloatToBytes(uint8_t*,uint8_t*,float,int);
-        void     UInt16ToBytes(uint8_t*,uint8_t*,uint16_t);
         bool     VerifyFormat();
         bool     VerifyLength();
         bool     VerifyChecksum();
-        void     SetVelocity();
         void     ReturnData();
-        
-
+        void     ReturnError();
+        bool     SetMonitoringUnit();
+        bool     SetVelocity();
+        bool     ReleaseMotor();
+        bool     BrakeMotor();
+        bool     SetMaxSpeed();
+        bool     SetMinSpeed();
+        bool     SetPPR();
+        bool     SetWheelRadius();
+        bool     SetIncreasingTime();
+        bool     SetDecreasingTime();
 };
 } /* namespace zeta_motor_driver */
 
