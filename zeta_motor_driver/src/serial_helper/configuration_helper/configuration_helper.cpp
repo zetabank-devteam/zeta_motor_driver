@@ -229,25 +229,15 @@ void ConfigurationHelper::SetFactoryValue()
     uint8_t two_bytes[2] = {0,0};
     SetEEPROM(BASE_ADDRESS_FW_VERSION,              two_bytes);
     SetError(two_bytes);
-    SetEEPROM(BASE_ADDRESS_BAUDRATE_FACTORY,        static_cast<uint8_t>(BaudratePreset::baudrate_115200));
     SetBaudrate(115200);
-    SetEEPROM(BASE_ADDRESS_P_GAIN_FACTORY,          210.0f, 1);
     SetPGain(210.0f);
-    SetEEPROM(BASE_ADDRESS_I_GAIN_FACTORY,          80.0f,  1);
     SetIGain(80.0f);
-    SetEEPROM(BASE_ADDRESS_D_GAIN_FACTORY,          0.0f,   1);
     SetDGain(0.0f);
-    SetEEPROM(BASE_ADDRESS_MAX_SPEED_FACTORY,       0.160f, 3);
     SetMaxSpeed(0.160f);
-    SetEEPROM(BASE_ADDRESS_MIN_SPEED_FACTORY,       0.06f,  3);
     SetMinSpeed(0.06f);
-    SetEEPROM(BASE_ADDRESS_PPR_FACTORY,             500.0f, 3);
-    SetPPR(500.0f);
-    SetEEPROM(BASE_ADDRESS_WHEEL_RADIUS_FACTORY,    0.035f, 3);
+    SetPPR(508.8f);
     SetWheelRadius(0.035f);
-    SetEEPROM(BASE_ADDRESS_INCREASING_TIME_FACTORY, uint16_t(100));
     SetIncreasingTime(100);
-    SetEEPROM(BASE_ADDRESS_DECREASING_TIME_FACTORY, uint16_t(100));
     SetDecreasingTime(100);
     SetEEPROM(EEPROM_SET_FACTORY_VALUE_ADDRESS,     uint8_t(FACTORY_SET_STATE_TRUE));
 }

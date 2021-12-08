@@ -4,7 +4,7 @@ using namespace zeta_motor_driver;
 
 void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 {
-    SetPPR(500.0f);
+    SetPPR(508.8f);
     SetWheelRadius(0.035f);
     memcpy(&motor1,&motor1_,sizeof(motor_t));
     memcpy(&motor2,&motor2_,sizeof(motor_t));

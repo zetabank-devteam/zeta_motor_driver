@@ -5,18 +5,19 @@
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
 // #define MINIMUM_DUTY  80  // actual minimum speed(0.06m/s)
-#define MINIMUM_DUTY  1
-#define MAXIMUM_DUTY  600 // caution! carefully change this value for preventing overdrive of motor driver
-#define VERY_SMALL_FLOAT  0.001f
+#define MINIMUM_DUTY            1
+#define MAXIMUM_DUTY            600 // caution! carefully change this value for preventing overdrive of motor driver
+#define VERY_SMALL_FLOAT        0.001f
 #define VELOCITY_PROFILE_STEPS  20
 #define MIN_VELOCITY_ERROR      0.002f
-#define PWM_FREQUENCY     5000UL // the most good wave form & performance(min 8cm/s available)
+#define PWM_FREQUENCY           5000UL // the most good wave form & performance(min 8cm/s available)
 // #define PWM_FREQUENCY     10000UL
-#define MOTOR_FORWARD      1
-#define MOTOR_BACKWARD     -1
-#define MOTOR_NEUTRAL      0
-// #define ENABLE_FLOAT_SENSING
+#define MOTOR_FORWARD           1
+#define MOTOR_BACKWARD          -1
+#define MOTOR_NEUTRAL           0
+// #define ENABLE_FLOAT_SENSING // uncomment it for activating wheel drop sensing
 #define WHEEL_FLOATING_THRESHOLD  5
+
 #ifdef TEST_ROBOT
 #define MOT1_TIMER  Timer3
 #define MOT2_TIMER  Timer1
@@ -24,6 +25,7 @@
 #define MOT1_TIMER  Timer1
 #define MOT2_TIMER  Timer3
 #endif
+
 namespace zeta_motor_driver
 {
 class PidController
