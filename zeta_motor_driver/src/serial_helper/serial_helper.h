@@ -43,6 +43,7 @@
 
 #define DIGIT_VELOCITY          FLOAT_PRECISION_3DIGIT
 #define DIGIT_RPM               FLOAT_PRECISION_1DIGIT
+#define DIGIT_PPS               FLOAT_PRECISION_1DIGIT
 
 #define MOTOR1_FORWARD          (0b01)
 #define MOTOR2_FORWARD          (0b10)
@@ -93,6 +94,7 @@ class SerialHelper : public ConfigurationHelper
     {
         monitoring_mps = 0,
         monitoring_rpm,
+        monitoring_pps,
         monitoring_last,
     };
     
@@ -103,9 +105,14 @@ class SerialHelper : public ConfigurationHelper
             serial_speed    = ConfigurationHelper::GetBaudrate();
             receive_index   = 0;
             com_error       = ComError::no_error;
-            monitoring_unit = MonitoringUnit::monitoring_mps;
+            monitoring_unit = MonitoringUnit::monitoring_pps;
             command_receive = false;
+            /* @TODO: 출고후 삭제 */
+            ConfigurationHelper::SetConfigurable(true);
+            ConfigurationHelper::SetPPR(508.8f);
+            ConfigurationHelper::SetWheelRadius(0.035f);
             wheel_radius    = ConfigurationHelper::GetWheelRadius();
+            ppr             = ConfigurationHelper::GetPPR();
         }
         void    Begin();
         void    ReceiveData();    // from user
@@ -124,6 +131,7 @@ class SerialHelper : public ConfigurationHelper
         uint8_t  transmit_index;
         uint8_t  receive_index;
         float    wheel_radius;
+        float    ppr;
         bool     command_receive;
         
         ComError       com_error;

@@ -227,6 +227,7 @@ void ConfigurationHelper::UInt16ToBytes(uint8_t* byte_h, uint8_t* byte_l, uint16
 void ConfigurationHelper::SetFactoryValue()
 {
     uint8_t two_bytes[2] = {0,0};
+    SetConfigurable(true);
     SetEEPROM(BASE_ADDRESS_FW_VERSION,              two_bytes);
     SetError(two_bytes);
     SetBaudrate(115200);
