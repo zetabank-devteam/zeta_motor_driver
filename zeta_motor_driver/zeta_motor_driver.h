@@ -1,7 +1,7 @@
 #ifndef ZETA_MOTOR_DRIVER_H_
 #define ZETA_MOTOR_DRIVER_H_
 // #define NO_ROS
-#define FW_VERSION "0.2.2"
+#define FW_VERSION "0.2.4"
 
 #include "src/configuration/pin_configuration.h"
 #include "src/serial_helper/serial_helper.h"

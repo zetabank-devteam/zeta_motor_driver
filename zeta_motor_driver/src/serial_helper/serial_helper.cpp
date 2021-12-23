@@ -17,6 +17,10 @@ void SerialHelper::ReceiveData()
 
 bool SerialHelper::ExecuteCommand()
 {
+    ConfigurationHelper::SetPPR(508.8f);
+    ConfigurationHelper::SetWheelRadius(0.035f);
+    wheel_radius    = ConfigurationHelper::GetWheelRadius();
+    ppr             = ConfigurationHelper::GetPPR();
     uint8_t pid = receive_message[0];
     if(command_receive)
     {
@@ -205,26 +209,27 @@ bool SerialHelper::SetMonitoringUnit()
         return true;
     }
 }
-
+#include "ros.h"
+extern ros::NodeHandle nh;
 void SerialHelper::SetVelocityMessage()
 {
     uint8_t dir = 0;
     uint8_t vel_byte[2] = {RECEIVE_NO_DATA,};
     memset(transmit_message, RECEIVE_NO_DATA, sizeof(uint8_t) * TX_BUFFER_SIZE);
     transmit_index = 0;
+    transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
+    transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
+    if(motor1_state.vel_cur > FLOAT32_ZERO)
+    {
+        dir |= MOTOR1_FORWARD;
+    }
+    if(motor2_state.vel_cur > FLOAT32_ZERO)
+    {
+        dir |= MOTOR2_FORWARD;
+    }
+    transmit_message[transmit_index++] = dir;
     if(monitoring_unit == MonitoringUnit::monitoring_mps)
     {
-        transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
-        transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
-        if(motor1_state.vel_cur > FLOAT32_ZERO)
-        {
-            dir |= MOTOR1_FORWARD;
-        }
-        if(motor2_state.vel_cur > FLOAT32_ZERO)
-        {
-            dir |= MOTOR2_FORWARD;
-        }
-        transmit_message[transmit_index++] = dir;
         FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]),motor1_state.vel_cur, DIGIT_VELOCITY);
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
@@ -234,21 +239,20 @@ void SerialHelper::SetVelocityMessage()
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_rpm)
     {
-        transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
-        transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
-        if(motor1_state.vel_cur > FLOAT32_ZERO)
-        {
-            dir |= MOTOR1_FORWARD;
-        }
-        if(motor2_state.vel_cur > FLOAT32_ZERO)
-        {
-            dir |= MOTOR2_FORWARD;
-        }
-        transmit_message[transmit_index++] = dir;
         ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor1_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
+        // v / (2 pi r) * 60 = (# of rot_per_sec) * 60[s] = RPM
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
         ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+    }
+    else if(monitoring_unit == MonitoringUnit::monitoring_pps)
+    {
+        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor1_state.vel_cur / TWO_PI / this -> wheel_radius * this -> ppr, DIGIT_PPS);
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
+        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * this -> ppr, DIGIT_PPS);
         transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
         transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
     }

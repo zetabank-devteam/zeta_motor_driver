@@ -9,7 +9,6 @@
 // **PID: Parameter ID.
 // ***chksum = sum of payload & length = (len + d1 + d2 + ... dN) & 0xFF
 void setup() {
-    // put your setup code here, to run once:
     Serial1.begin(115200);
     InitDriver();
 #ifdef NO_ROS
