@@ -209,14 +209,17 @@ bool SerialHelper::SetMonitoringUnit()
         return true;
     }
 }
-#include "ros.h"
-extern ros::NodeHandle nh;
+
 void SerialHelper::SetVelocityMessage()
 {
     uint8_t dir = 0;
-    uint8_t vel_byte[2] = {RECEIVE_NO_DATA,};
+    uint8_t two_bytes[2] = {RECEIVE_NO_DATA,};
+    float   rotation_per_sec[2] = {motor1_state.vel_cur / TWO_PI / this -> wheel_radius, motor2_state.vel_cur / TWO_PI / this -> wheel_radius};
+    float   velocity_linear, velocity_angular; // linear velocity, angular velocity
+    // reset buffer
     memset(transmit_message, RECEIVE_NO_DATA, sizeof(uint8_t) * TX_BUFFER_SIZE);
     transmit_index = 0;
+
     transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
     transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
     if(motor1_state.vel_cur > FLOAT32_ZERO)
@@ -230,31 +233,51 @@ void SerialHelper::SetVelocityMessage()
     transmit_message[transmit_index++] = dir;
     if(monitoring_unit == MonitoringUnit::monitoring_mps)
     {
-        FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]),motor1_state.vel_cur, DIGIT_VELOCITY);
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-        FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur, DIGIT_VELOCITY);
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+        FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]),motor1_state.vel_cur, DIGIT_VELOCITY);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), motor2_state.vel_cur, DIGIT_VELOCITY);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_rpm)
     {
-        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor1_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[0] * 60.0f, DIGIT_RPM);
         // v / (2 pi r) * 60 = (# of rot_per_sec) * 60[s] = RPM
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * 60.0f, DIGIT_RPM);
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[1] * 60.0f, DIGIT_RPM);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_pps)
     {
-        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor1_state.vel_cur / TWO_PI / this -> wheel_radius * this -> ppr, DIGIT_PPS);
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
-        ConfigurationHelper::FloatToBytes(&(vel_byte[POS_VEL_H]), &(vel_byte[POS_VEL_L]), motor2_state.vel_cur / TWO_PI / this -> wheel_radius * this -> ppr, DIGIT_PPS);
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_H];
-        transmit_message[transmit_index++] = vel_byte[POS_VEL_L];
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[0] * this -> ppr, DIGIT_PPS);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[1] * this -> ppr, DIGIT_PPS);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+    }
+    else if(monitoring_unit == MonitoringUnit::monitoring_complex)
+    {
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[0] * this -> ppr, DIGIT_PPS);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[1] * this -> ppr, DIGIT_PPS);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        velocity_linear  = fabs(motor1_state.vel_cur + motor2_state.vel_cur) / 2.0f;
+        if(wheel_seperation != 0.0f)
+        {
+            velocity_angular = fabs(motor2_state.vel_cur - motor1_state.vel_cur) / wheel_seperation; // w = (v_r - v_l) / d
+        }
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), velocity_linear, DIGIT_VEL_LINEAR);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), velocity_angular, DIGIT_VEL_ANGULAR);
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
     }
 }
 

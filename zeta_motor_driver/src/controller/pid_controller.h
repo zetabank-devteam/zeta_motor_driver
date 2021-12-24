@@ -26,6 +26,9 @@
 #define MOT2_TIMER  Timer3
 #endif
 
+#include "ros.h"
+extern ros::NodeHandle nh;
+
 namespace zeta_motor_driver
 {
 class PidController
@@ -42,7 +45,7 @@ class PidController
         typedef struct
         {
             uint8_t          encoder_pin;
-            volatile int32_t pulse_count;
+            volatile uint32_t pulse_count;
             Init()
             {
                 pulse_count = 0;
@@ -122,6 +125,11 @@ class PidController
             static uint32_t time_control_pre;
             static float    sampling_time;
             uint32_t        time_control_cur = micros();
+            if(time_control_cur - time_control_pre < 0xF0000000)
+            {
+                sampling_time = float(time_control_cur - time_control_pre) / 1000000.0;
+            }
+            time_control_pre = time_control_cur;
             /* feedback block */
             if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
             {
@@ -129,15 +137,10 @@ class PidController
                 return;
             }
             ChangeDir();
-            if(time_control_cur - time_control_pre < 0xF0000000)
-            {
-                sampling_time = float(time_control_cur - time_control_pre) / 1000000.0;
-            }
-            time_control_pre = time_control_cur;
             motor1.pps = float(motor1.encoder.pulse_count) / sampling_time;
             motor2.pps = float(motor2.encoder.pulse_count) / sampling_time;
-            motor1.vel_cur = pps_to_velocity(motor1.pps);
-            motor2.vel_cur = pps_to_velocity(motor2.pps); // inline in inline -> problem??
+            motor1.vel_cur = float(motor1.dir) * pps_to_velocity(motor1.pps);
+            motor2.vel_cur = float(motor2.dir) * pps_to_velocity(motor2.pps);
             motor1.encoder.pulse_count = 0;
             motor2.encoder.pulse_count = 0;
             /* controller block */
@@ -204,40 +207,22 @@ class PidController
             if(motor2.vel_step != (VELOCITY_PROFILE_STEPS - 1))
             {
                 motor2.vel_step += 1;
-            }  
+            }
             /* Run */
             MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
             MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
             pid_motor1.err_int_pre = pid_motor1.err_int;
             pid_motor2.err_int_pre = pid_motor2.err_int;
-            // Serial1.print(motor1.vel_cmd,3);Serial1.print(",");
-            // // Serial1.print(motor1.vel_cmd_profile[motor1.vel_step],3);Serial1.print(",");
-            // Serial1.print(float(abs(motor1.duty))/1024.0f,3);Serial1.print(",");
-            // Serial1.println(motor1.vel_cur,3);
         }
 
         void read_encoder1()
         {
-            if(motor1.dir == MOTOR_FORWARD)
-            {
-                motor1.encoder.pulse_count++;
-            }
-            else if(motor1.dir == MOTOR_BACKWARD)
-            {
-                motor1.encoder.pulse_count--;
-            }
+            motor1.encoder.pulse_count++;
         }
 
         void read_encoder2()
         {
-            if(motor2.dir == MOTOR_FORWARD)
-            {
-                motor2.encoder.pulse_count++;
-            }
-            else if(motor2.dir == MOTOR_BACKWARD)
-            {
-                motor2.encoder.pulse_count--;
-            }
+            motor2.encoder.pulse_count++;
         }
         
     private:
