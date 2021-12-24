@@ -24,7 +24,6 @@ void setup() {
 void InitROS()
 {
     nh.getHardware()->setBaud(serial_helper.GetBaudrate());
-    // nh.getHardware()->setBaud(115200);
     nh.initNode();
     nh.advertise(fw_version_publisher);
     nh.advertise(serial_output_publisher);

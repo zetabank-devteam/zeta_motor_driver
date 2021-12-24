@@ -35,6 +35,8 @@ void ConfigurationHelper::Update()
     max_speed       = (EEPROM.read(BASE_ADDRESS_MAX_SPEED + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_MAX_SPEED)) / 1000.0f;
     min_speed       = (EEPROM.read(BASE_ADDRESS_MIN_SPEED + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_MIN_SPEED)) / 1000.0f;
     ppr             = (EEPROM.read(BASE_ADDRESS_PPR + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_PPR)) / 10.0f;
+    wheel_radius    = (EEPROM.read(BASE_ADDRESS_WHEEL_RADIUS + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_WHEEL_RADIUS))/1000.0f;
+    wheel_seperation    = (EEPROM.read(BASE_ADDRESS_WHEEL_SEPERATION + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_WHEEL_SEPERATION))/1000.0f;
     increasing_time = (EEPROM.read(BASE_ADDRESS_INCREASING_TIME + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_INCREASING_TIME));
     decreasing_time = (EEPROM.read(BASE_ADDRESS_DECREASING_TIME + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_DECREASING_TIME));
 }
@@ -128,6 +130,12 @@ void ConfigurationHelper::SetWheelRadius(float wheel_radius_)
 {
     SetEEPROM(BASE_ADDRESS_WHEEL_RADIUS, wheel_radius_, 3);
     wheel_radius = (EEPROM.read(BASE_ADDRESS_WHEEL_RADIUS + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_WHEEL_RADIUS)) / 1000.0f;
+}
+
+void ConfigurationHelper::SetWheelSeperation(float wheel_seperation_)
+{
+    SetEEPROM(BASE_ADDRESS_WHEEL_SEPERATION, wheel_seperation_, 3);
+    wheel_seperation = (EEPROM.read(BASE_ADDRESS_WHEEL_SEPERATION + 0x001) * 256 + EEPROM.read(BASE_ADDRESS_WHEEL_SEPERATION)) / 1000.0f;
 }
 
 void ConfigurationHelper::SetEEPROM(uint16_t base_address, float val, int digit)
@@ -238,6 +246,7 @@ void ConfigurationHelper::SetFactoryValue()
     SetMinSpeed(0.06f);
     SetPPR(508.8f);
     SetWheelRadius(0.035f);
+    SetWheelSeperation(0.240f);
     SetIncreasingTime(100);
     SetDecreasingTime(100);
     SetEEPROM(EEPROM_SET_FACTORY_VALUE_ADDRESS,     uint8_t(FACTORY_SET_STATE_TRUE));
