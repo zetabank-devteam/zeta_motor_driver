@@ -137,8 +137,8 @@ class PidController
                 return;
             }
             ChangeDir();
-            motor1.pps = float(motor1.encoder.pulse_count) / sampling_time;
-            motor2.pps = float(motor2.encoder.pulse_count) / sampling_time;
+            motor1.pps     = float(motor1.encoder.pulse_count) / sampling_time;
+            motor2.pps     = float(motor2.encoder.pulse_count) / sampling_time;
             motor1.vel_cur = float(motor1.dir) * pps_to_velocity(motor1.pps);
             motor2.vel_cur = float(motor2.dir) * pps_to_velocity(motor2.pps);
             motor1.encoder.pulse_count = 0;
@@ -147,11 +147,11 @@ class PidController
             pid_motor1.err      = motor1.vel_cmd_profile[motor1.vel_step] - motor1.vel_cur;   // e[k] = r - y[k]
             pid_motor1.err_derv = (pid_motor1.err - pid_motor1.err_pre) / sampling_time;      // derv(e)[k] = (e[k] - e[k-1]) / ts    where, 'ts' is sampling time
             pid_motor1.err_int  = pid_motor1.err_int_pre +  pid_motor1.err * sampling_time;   // int(e)[k] = I[k-1] + e[k] * ts
-            motor1.duty += pid_motor1.err * pid_motor1.kp + pid_motor1.err_int * pid_motor1.ki + pid_motor1.err_derv * pid_motor1.kd;
+            motor1.duty         += pid_motor1.err * pid_motor1.kp + pid_motor1.err_int * pid_motor1.ki + pid_motor1.err_derv * pid_motor1.kd;
             pid_motor2.err      = motor2.vel_cmd_profile[motor2.vel_step] - motor2.vel_cur;                 
             pid_motor2.err_derv = (pid_motor2.err - pid_motor2.err_pre) / sampling_time; 
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
-            motor2.duty += pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd;
+            motor2.duty         += pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd;
             /* profile generator block */
             if(abs(motor1.duty) <= MINIMUM_DUTY)
             {
