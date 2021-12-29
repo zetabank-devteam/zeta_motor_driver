@@ -11,9 +11,9 @@
 #include <std_msgs/UInt8MultiArray.h>
 #include <std_msgs/String.h>
 
-#define VEL_TRANSMIT_FREQUENCY     30
-#define CONTROL_FREQUENCY          40
-#define COMMAND_EXECUTE_FREQUENCY  20
+#define VEL_TRANSMIT_FREQUENCY     20
+#define CONTROL_FREQUENCY          20
+#define COMMAND_EXECUTE_FREQUENCY  100
 #define MA_FILTER_SIZE             15
 #define NUM_TASK                   5
 

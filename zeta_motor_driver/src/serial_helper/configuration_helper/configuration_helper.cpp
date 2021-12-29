@@ -236,11 +236,11 @@ void ConfigurationHelper::SetFactoryValue()
 {
     uint8_t two_bytes[2] = {0,0};
     SetConfigurable(true);
-    SetEEPROM(BASE_ADDRESS_FW_VERSION,              two_bytes);
+    SetEEPROM(BASE_ADDRESS_FW_VERSION, two_bytes);
     SetError(two_bytes);
     SetBaudrate(115200);
     SetPGain(210.0f);
-    SetIGain(80.0f);
+    SetIGain(20.0f);
     SetDGain(0.0f);
     SetMaxSpeed(0.160f);
     SetMinSpeed(0.06f);
@@ -249,6 +249,6 @@ void ConfigurationHelper::SetFactoryValue()
     SetWheelSeperation(0.240f);
     SetIncreasingTime(100);
     SetDecreasingTime(100);
-    SetEEPROM(EEPROM_SET_FACTORY_VALUE_ADDRESS,     uint8_t(FACTORY_SET_STATE_TRUE));
+    SetEEPROM(EEPROM_SET_FACTORY_VALUE_ADDRESS, uint8_t(FACTORY_SET_STATE_TRUE));
 }
 /* configuration_helper.cpp */

@@ -121,7 +121,6 @@ class PidController
         void GetMotorState(MotorState[]);
 
         void ResetMotor(); // reset motor state
-
         void ControlVel() __attribute__((always_inline))
         {
             static uint32_t time_control_pre;
@@ -138,6 +137,7 @@ class PidController
                 BrakeMotor();
                 return;
             }
+            SetDir();
             ChangeDir();
             motor1.pps      =  float(motor1.encoder.pulse_count) / sampling_time;
             motor2.pps      =  float(motor2.encoder.pulse_count) / sampling_time;
@@ -172,8 +172,12 @@ class PidController
             pid_motor2.err_derv = (pid_motor2.err - pid_motor2.err_pre) / sampling_time; 
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty         += pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd;
+            // char tempstr[32];
+            // sprintf(tempstr,"%d %d %d %d %d",int(motor2.vel_cmd_profile[motor2.vel_step] * 1000), int(motor2.vel_cur * 1000), int(pid_motor2.err*10000),int(pid_motor2.err_int*10000),motor2.duty);
+            // nh.loginfo(tempstr);
             /* profile generator block */
-            if(abs(motor1.duty) <= MINIMUM_DUTY)
+
+            if(abs(motor1.duty) <= MINIMUM_DUTY && abs(motor1.duty) > 0)
             {
                 motor1.duty = MINIMUM_DUTY * motor1.dir;
                 if(pid_motor1.err * float(motor1.dir) < VERY_SMALL_FLOAT)
@@ -191,7 +195,13 @@ class PidController
                 }
                 motor1.state = MotorState::run;
             }
-            if(abs(motor2.duty) <= MINIMUM_DUTY)
+            else if(motor1.duty * motor1.dir < 0)
+            {
+                motor1.dir *= -1;
+                ChangeDir();
+            }
+
+            if(abs(motor2.duty) <= MINIMUM_DUTY && abs(motor2.duty) > 0)
             {
                 motor2.duty = MINIMUM_DUTY * motor2.dir;
                 if(pid_motor2.err * float(motor2.dir) < VERY_SMALL_FLOAT)
@@ -209,6 +219,12 @@ class PidController
                 }
                 motor2.state = MotorState::run;
             }
+            else if(motor2.duty * motor2.dir < 0)
+            {
+                motor2.dir *= -1;
+                ChangeDir();
+            }
+
             /* stop condition */
             if(fabs(motor1.vel_cmd_profile[motor1.vel_step]) < VERY_SMALL_FLOAT)
             {
@@ -229,6 +245,7 @@ class PidController
                 motor2.vel_step += 1;
             }
             /* Run */
+            // TODO: motor diverse when input too low values
             MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
             MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
             pid_motor1.err_int_pre = pid_motor1.err_int;
@@ -258,36 +275,9 @@ class PidController
         {
             return pps / ppr * TWO_PI * wheel_radius;
         }
+
         void  ChangeDir() __attribute__((always_inline))
         {
-            if(fabs(motor1.vel_cmd_profile[motor1.vel_step]) < VERY_SMALL_FLOAT)
-            {
-                motor1.dir = MOTOR_NEUTRAL; // if zero input
-                pid_motor1.InitError();
-            }
-            else if(motor1.vel_cmd_profile[motor1.vel_step] < 0.0)
-            {
-                motor1.dir = MOTOR_BACKWARD;
-            }
-            else
-            {
-                motor1.dir = MOTOR_FORWARD;
-            }
-
-            if(fabs(motor2.vel_cmd_profile[motor2.vel_step]) < VERY_SMALL_FLOAT)
-            {
-                motor2.dir = MOTOR_NEUTRAL; // if zero input
-                pid_motor2.InitError();
-            }
-            else if(motor2.vel_cmd_profile[motor2.vel_step] < 0.0)
-            {
-                motor2.dir = MOTOR_BACKWARD;
-            }
-            else
-            {
-                motor2.dir = MOTOR_FORWARD;
-            }
-
             if(motor1.dir == MOTOR_NEUTRAL && motor1.state != MotorState::stop)
             {
                 digitalWrite(motor1.ccw_pin, LOW);
@@ -319,6 +309,37 @@ class PidController
             {
                 digitalWrite(motor2.ccw_pin, LOW);
                 digitalWrite(motor2.cw_pin, HIGH);
+            }
+        }
+
+        void SetDir() __attribute__((always_inline))
+        {
+            if(fabs(motor1.vel_cmd_profile[motor1.vel_step]) < VERY_SMALL_FLOAT)
+            {
+                motor1.dir = MOTOR_NEUTRAL; // if zero input
+                pid_motor1.InitError();
+            }
+            else if(motor1.vel_cmd_profile[motor1.vel_step] < 0.0)
+            {
+                motor1.dir = MOTOR_BACKWARD;
+            }
+            else
+            {
+                motor1.dir = MOTOR_FORWARD;
+            }
+
+            if(fabs(motor2.vel_cmd_profile[motor2.vel_step]) < VERY_SMALL_FLOAT)
+            {
+                motor2.dir = MOTOR_NEUTRAL; // if zero input
+                pid_motor2.InitError();
+            }
+            else if(motor2.vel_cmd_profile[motor2.vel_step] < 0.0)
+            {
+                motor2.dir = MOTOR_BACKWARD;
+            }
+            else
+            {
+                motor2.dir = MOTOR_FORWARD;
             }
         }
         void CheckWheelFloating() __attribute__((always_inline))

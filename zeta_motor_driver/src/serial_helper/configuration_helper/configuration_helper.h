@@ -58,7 +58,7 @@ class ConfigurationHelper
     public:
         ConfigurationHelper()
         {
-            if(EEPROM.read(EEPROM_SET_FACTORY_VALUE_ADDRESS) != FACTORY_SET_STATE_TRUE) // default 255
+            // if(EEPROM.read(EEPROM_SET_FACTORY_VALUE_ADDRESS) != FACTORY_SET_STATE_TRUE) // default 255
             {
                 SetFactoryValue();
             }
