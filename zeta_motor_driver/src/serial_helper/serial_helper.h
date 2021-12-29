@@ -46,6 +46,7 @@
 #define DIGIT_PPS               FLOAT_PRECISION_1DIGIT
 #define DIGIT_VEL_LINEAR        FLOAT_PRECISION_3DIGIT
 #define DIGIT_VEL_ANGULAR       FLOAT_PRECISION_3DIGIT
+#define DIGIT_WHEEL_POSITION    FLOAT_PRECISION_3DIGIT
 
 #define MOTOR1_FORWARD          (0b01)
 #define MOTOR2_FORWARD          (0b10)
@@ -59,8 +60,9 @@ class SerialHelper : public ConfigurationHelper
 {
     typedef struct
     {
-        float vel_cmd;
-        float vel_cur;
+        float vel_cmd;  // m/s
+        float vel_cur;  // m/s
+        float position; // radian
         bool  runnable;
     }motor_state_t;
     enum class ComError : uint8_t

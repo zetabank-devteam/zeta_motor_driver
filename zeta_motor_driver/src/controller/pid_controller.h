@@ -63,12 +63,13 @@ class PidController
             float      vel_cmd_profile[VELOCITY_PROFILE_STEPS];
             float      vel_cur;
             float      pps;       // pulse per second
+            float      position;  // radian
             int16_t    duty;
             encoder_t  encoder;
             MotorState state;
             Init()
             {
-                vel_cmd = vel_cur = pps = 0.0f;
+                vel_cmd = vel_cur = pps = position = 0.0f;
                 for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
                 {
                     vel_cmd_profile[i] = 0.0f;
@@ -116,6 +117,7 @@ class PidController
         void SetMinSpeed(float);
 
         void GetVelocity(float[]);
+        void GetPosition(float[]);
         void GetMotorState(MotorState[]);
 
         void ResetMotor(); // reset motor state
@@ -137,10 +139,28 @@ class PidController
                 return;
             }
             ChangeDir();
-            motor1.pps     = float(motor1.encoder.pulse_count) / sampling_time;
-            motor2.pps     = float(motor2.encoder.pulse_count) / sampling_time;
-            motor1.vel_cur = float(motor1.dir) * pps_to_velocity(motor1.pps);
-            motor2.vel_cur = float(motor2.dir) * pps_to_velocity(motor2.pps);
+            motor1.pps      =  float(motor1.encoder.pulse_count) / sampling_time;
+            motor2.pps      =  float(motor2.encoder.pulse_count) / sampling_time;
+            motor1.vel_cur  =  float(motor1.dir) * pps_to_velocity(motor1.pps);
+            motor2.vel_cur  =  float(motor2.dir) * pps_to_velocity(motor2.pps);
+            motor1.position += float(motor1.dir) * float(motor1.encoder.pulse_count) / ppr * TWO_PI;
+            motor2.position += float(motor2.dir) * float(motor2.encoder.pulse_count) / ppr * TWO_PI;
+            if(motor1.position > TWO_PI)
+            {
+                motor1.position -= TWO_PI;
+            }
+            else if(motor1.position < 0.0f)
+            {
+                motor1.position += TWO_PI;
+            }
+            if(motor2.position > TWO_PI)
+            {
+                motor2.position -= TWO_PI;
+            }
+            else if(motor2.position < 0.0f)
+            {
+                motor2.position += TWO_PI;
+            }
             motor1.encoder.pulse_count = 0;
             motor2.encoder.pulse_count = 0;
             /* controller block */

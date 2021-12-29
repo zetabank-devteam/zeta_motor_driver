@@ -261,10 +261,16 @@ void SerialHelper::SetVelocityMessage()
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_complex)
     {
-        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[0] * this -> ppr, DIGIT_PPS);
+        // ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[0] * this -> ppr, DIGIT_PPS);
+        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        // ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[1] * this -> ppr, DIGIT_PPS);
+        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
+        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), motor1_state.position, DIGIT_WHEEL_POSITION);
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
-        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[1] * this -> ppr, DIGIT_PPS);
+        ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), motor2_state.position, DIGIT_WHEEL_POSITION);
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
         velocity_linear  = fabs(motor1_state.vel_cur + motor2_state.vel_cur) / 2.0f;

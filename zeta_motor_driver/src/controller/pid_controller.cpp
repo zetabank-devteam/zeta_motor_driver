@@ -85,4 +85,10 @@ void PidController::GetVelocity(float dest[])
     dest[1] = motor2.vel_cur;
 }
 
+void PidController::GetPosition(float dest[])
+{
+    dest[0] = motor1.position;
+    dest[1] = motor2.position;
+}
+
 /* pid_controller.cpp */

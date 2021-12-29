@@ -105,9 +105,13 @@ void RunPeriodicEvent()
 void TransmitVelocity()
 {
     float vel[2];
+    float pos[2];
     controller.GetVelocity(vel);
-    serial_helper.motor1_state.vel_cur = vel[0];
-    serial_helper.motor2_state.vel_cur = vel[1];
+    controller.GetPosition(pos);
+    serial_helper.motor1_state.vel_cur  = vel[0];
+    serial_helper.motor2_state.vel_cur  = vel[1];
+    serial_helper.motor1_state.position = pos[0];
+    serial_helper.motor2_state.position = pos[1];
     serial_helper.SetVelocityMessage();
 #ifndef NO_ROS
     serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
