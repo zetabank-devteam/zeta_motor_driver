@@ -4,8 +4,6 @@ using namespace zeta_motor_driver;
 
 void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 {
-    SetPPR(508.8f);
-    SetWheelRadius(0.035f);
     memcpy(&motor1,&motor1_,sizeof(motor_t));
     memcpy(&motor2,&motor2_,sizeof(motor_t));
     memcpy(&pid_motor1,&pid_param,sizeof(pid_t));
@@ -24,7 +22,7 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     MOT2_TIMER.initialize(1000000/PWM_FREQUENCY);
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
-    decreasing_time = 10;
+    braking_time = 10;
     motor1.state = MotorState::ready;
     motor2.state = MotorState::ready;
 }
@@ -33,18 +31,19 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 
 void PidController::BrakeMotor()
 {
-    motor1.dir     *= -1;
-    motor2.dir     *= -1;
+    motor1.dir *= -1;
+    motor2.dir *= -1;
     ChangeDir();
     MOT1_TIMER.pwm(motor1.pwm_pin, MAXIMUM_DUTY);
     MOT2_TIMER.pwm(motor2.pwm_pin, MAXIMUM_DUTY);
-    delay(decreasing_time);
+    delay(braking_time);
     MOT1_TIMER.pwm(motor1.pwm_pin, 0);
     MOT2_TIMER.pwm(motor2.pwm_pin, 0);
     motor1.Init();
     motor2.Init();
     pid_motor1.InitError();
     pid_motor2.InitError();
+    ChangeDir();
 }
 
 void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool brake = false)
@@ -83,6 +82,12 @@ void PidController::GetVelocity(float dest[])
 {
     dest[0] = motor1.vel_cur;
     dest[1] = motor2.vel_cur;
+}
+
+void PidController::GetPosition(float dest[])
+{
+    dest[0] = motor1.position;
+    dest[1] = motor2.position;
 }
 
 /* pid_controller.cpp */

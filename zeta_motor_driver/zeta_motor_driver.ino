@@ -28,8 +28,6 @@ void InitROS()
     nh.advertise(fw_version_publisher);
     nh.advertise(serial_output_publisher);
     nh.subscribe(serial_input_subscriber);
-    // nh.advertise(test_publisher);
-    // test_msg.data = (uint8_t*)malloc(16);
     serial_output_msg.data = (uint8_t*)malloc(sizeof(uint8_t) * TX_BUFFER_SIZE);
 }
 #endif
@@ -105,9 +103,13 @@ void RunPeriodicEvent()
 void TransmitVelocity()
 {
     float vel[2];
+    float pos[2];
     controller.GetVelocity(vel);
-    serial_helper.motor1_state.vel_cur = vel[0];
-    serial_helper.motor2_state.vel_cur = vel[1];
+    controller.GetPosition(pos);
+    serial_helper.motor1_state.vel_cur  = vel[0];
+    serial_helper.motor2_state.vel_cur  = vel[1];
+    serial_helper.motor1_state.position = pos[0];
+    serial_helper.motor2_state.position = pos[1];
     serial_helper.SetVelocityMessage();
 #ifndef NO_ROS
     serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
