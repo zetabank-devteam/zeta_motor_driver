@@ -1,5 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_CONFIGURATION_HELPER_H_
 #define ZETA_MOTOR_DRIVER_CONFIGURATION_HELPER_H_
+#include "../../pre_define.h"
 
 #include <Arduino.h>
 #include <EEPROM.h>
@@ -58,7 +59,9 @@ class ConfigurationHelper
     public:
         ConfigurationHelper()
         {
-            // if(EEPROM.read(EEPROM_SET_FACTORY_VALUE_ADDRESS) != FACTORY_SET_STATE_TRUE) // default 255
+#ifndef SET_PARAM_ENABLE
+            if(EEPROM.read(EEPROM_SET_FACTORY_VALUE_ADDRESS) != FACTORY_SET_STATE_TRUE) // default 255
+#endif
             {
                 SetFactoryValue();
             }

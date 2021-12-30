@@ -25,6 +25,8 @@
 
 #define MOTOR_FORWARD           1
 #define MOTOR_BACKWARD          -1
+#define ROTATION_FORWARD        1
+#define ROTATION_BACKWARD       0
 #define POS_MONITORING_UNIT     1
 #define POS_DIR                 1
 #define POS_BYTE_HIGH           0

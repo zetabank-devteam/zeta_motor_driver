@@ -2,8 +2,8 @@
 
 using namespace zeta_motor_driver;
 
-#include <ros.h>
-extern ros::NodeHandle nh;
+// #include <ros.h>
+// extern ros::NodeHandle nh;
 
 void SerialHelper::Begin()
 {
@@ -17,8 +17,6 @@ void SerialHelper::ReceiveData()
 
 bool SerialHelper::ExecuteCommand()
 {
-    ConfigurationHelper::SetPPR(508.8f);
-    ConfigurationHelper::SetWheelRadius(0.035f);
     wheel_radius    = ConfigurationHelper::GetWheelRadius();
     ppr             = ConfigurationHelper::GetPPR();
     uint8_t pid = receive_message[0];
@@ -215,7 +213,7 @@ void SerialHelper::SetVelocityMessage()
     uint8_t dir = 0;
     uint8_t two_bytes[2] = {RECEIVE_NO_DATA,};
     float   rotation_per_sec[2] = {motor1_state.vel_cur / TWO_PI / this -> wheel_radius, motor2_state.vel_cur / TWO_PI / this -> wheel_radius};
-    float   velocity_linear, velocity_angular; // linear velocity, angular velocity
+    float   velocity_diff, velocity_linear, velocity_angular = 0.0f; // linear velocity, angular velocity
     // reset buffer
     memset(transmit_message, RECEIVE_NO_DATA, sizeof(uint8_t) * TX_BUFFER_SIZE);
     transmit_index = 0;
@@ -261,12 +259,6 @@ void SerialHelper::SetVelocityMessage()
     }
     else if(monitoring_unit == MonitoringUnit::monitoring_complex)
     {
-        // ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[0] * this -> ppr, DIGIT_PPS);
-        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
-        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
-        // ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), rotation_per_sec[1] * this -> ppr, DIGIT_PPS);
-        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
-        // transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
         ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), motor1_state.position, DIGIT_WHEEL_POSITION);
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
@@ -276,11 +268,20 @@ void SerialHelper::SetVelocityMessage()
         velocity_linear  = fabs(motor1_state.vel_cur + motor2_state.vel_cur) / 2.0f;
         if(wheel_seperation != 0.0f)
         {
-            velocity_angular = fabs(motor2_state.vel_cur - motor1_state.vel_cur) / wheel_seperation; // w = (v_r - v_l) / d
+            velocity_diff = motor2_state.vel_cur - motor1_state.vel_cur;
+            velocity_angular = fabs(velocity_diff) / wheel_seperation; // w = (v_r - v_l) / d
         }
         ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), velocity_linear, DIGIT_VEL_LINEAR);
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
+        if(velocity_diff >= 0.0f)
+        {
+            transmit_message[transmit_index++] = ROTATION_FORWARD;
+        }
+        else
+        {
+            transmit_message[transmit_index++] = ROTATION_BACKWARD;
+        }
         ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), velocity_angular, DIGIT_VEL_ANGULAR);
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
@@ -361,7 +362,6 @@ void SerialHelper::FlushReceiveMessage()
 {
     memset(receive_message, RECEIVE_NO_DATA, RX_BUFFER_SIZE);
     receive_index = 0;
-    receive_message[0] = static_cast<uint8_t>(ParameterID::pid_last);
 }
 
 void SerialHelper::SetMessage(uint8_t msg[], uint8_t length)
