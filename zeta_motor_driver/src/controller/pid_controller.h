@@ -7,6 +7,7 @@
 // #define MINIMUM_DUTY  80  // actual minimum speed(0.06m/s)
 #define MINIMUM_DUTY            1
 #define MAXIMUM_DUTY            700 // caution! carefully change this value for preventing overdrive of motor driver
+#define MAXIMUM_VELOCITY        0.25f
 #define VERY_SMALL_FLOAT        0.001f
 #define VELOCITY_PROFILE_STEPS  5
 #define MIN_VELOCITY_ERROR      0.002f
@@ -171,7 +172,7 @@ class PidController
             // static float sum;
             // sum += (motor1.vel_cur - motor2.vel_cur);
             // char tempstr[32];
-            // int length = sprintf(tempstr,"%d, %d\r\n",int(motor1.vel_cmd * 1000),int(motor1.vel_cur * 1000));
+            // int length = sprintf(tempstr,"%d, %d\r\n",int(motor1.vel_cur * 1000),int(motor2.vel_cur * 1000));
             
             // int length = sprintf(tempstr,"%d\r\n",int(sum) * 1000);
             // Serial1.write(tempstr,length);
