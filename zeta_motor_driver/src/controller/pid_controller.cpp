@@ -68,6 +68,22 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
     }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
+    if(motor1.vel_cmd > MAXIMUM_VELOCITY)
+    {
+        motor1.vel_cmd = MAXIMUM_VELOCITY;
+    }
+    else if(motor1.vel_cmd < -1.0f * MAXIMUM_VELOCITY)
+    {
+        motor1.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
+    }
+    if(motor2.vel_cmd > MAXIMUM_VELOCITY)
+    {
+        motor2.vel_cmd = MAXIMUM_VELOCITY;
+    }
+    else if(motor2.vel_cmd < -1.0f * MAXIMUM_VELOCITY)
+    {
+        motor2.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
+    }
     for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
     {
         motor1.vel_cmd_profile[i] = motor1.vel_cur + (motor1.vel_cmd - motor1.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);

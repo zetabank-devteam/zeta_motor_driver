@@ -3,5 +3,5 @@
 // #define SERIAL_DEBUG
 // #define NO_ROS
 // #define TEST_ROBOT
-#define SET_PARAM_ENABLE
+// #define SET_PARAM_ENABLE
 #endif
