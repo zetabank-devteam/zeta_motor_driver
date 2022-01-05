@@ -38,6 +38,7 @@ void InitDriver()
     pid_param.Init();
     pid_param.kp = serial_helper.GetPGain();
     pid_param.ki = serial_helper.GetIGain();
+    pid_param.kd = serial_helper.GetDGain();
     motor1.encoder.encoder_pin = MOT1_ENCODER_PIN;
     motor2.encoder.encoder_pin = MOT2_ENCODER_PIN;
     controller.SetPPR(serial_helper.GetPPR());
@@ -187,5 +188,43 @@ void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
     serial_helper.SetMessage(msg.data, (uint8_t)msg.data_length);
 }
 #endif /* NO_ROS */
+// void serialEvent1()
+// {
+//     char c;
+//     uint8_t forward[]  = {0x01,0x03,0x00,0xa0,0x00,0xa0};
+//     uint8_t stop[]     = {0x01,0x03,0x00,0x00,0x00,0x00};
+//     uint8_t backward[] = {0x01,0x00,0x00,0xa0,0x00,0xa0};
+//     uint8_t turn_cw[]  = {0x01,0x01,0x00,0xa0,0x00,0xa0};
+//     uint8_t turn_ccw[] = {0x01,0x02,0x00,0xa0,0x00,0xa0};
+//     while(Serial1.available())
+//     {
+//         c = Serial1.read();
+//     }
+//     switch(c)
+//     {
+//         case 'w':
+//             serial_helper.SetMessage(forward,sizeof(forward));
+//             Serial1.println("forward!!!");
+//             break;
+//         case 's':
+//             serial_helper.SetMessage(stop,sizeof(stop));
+//             Serial1.println("stop!!!");
+//             break;
+//         case 'x':
+//             serial_helper.SetMessage(backward,sizeof(backward));
+//             Serial1.println("backward!!!");
+//             break;
+//         case 'q':
+//             serial_helper.SetMessage(turn_cw,sizeof(turn_cw));
+//             Serial1.println("turn cw!!!");
+//             break;
+//         case 'e':
+//             serial_helper.SetMessage(turn_ccw,sizeof(turn_ccw));
+//             Serial1.println("turn ccw!!!");
+//             break;
 
+//         default:
+//             break;
+//     }
+// }
 /* zeta_motor_driver.ino */
