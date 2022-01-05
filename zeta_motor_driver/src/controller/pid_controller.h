@@ -58,6 +58,7 @@ class PidController
             uint8_t    ccw_pin;
             uint8_t    float_pin;
             int        dir;
+            int        dir_pre;
             int        vel_step;
             float      vel_cmd;
             float      vel_cmd_profile[VELOCITY_PROFILE_STEPS];
@@ -74,6 +75,7 @@ class PidController
                     vel_cmd_profile[i] = 0.0f;
                 }
                 dir      = MOTOR_NEUTRAL;
+                dir_pre  = MOTOR_NEUTRAL;
                 vel_step = 0;
                 duty     = 0; // 0 ~ 1024
                 state    = MotorState::ready;
@@ -168,13 +170,13 @@ class PidController
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty         += pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd;
             
-            
             // static float sum;
             // sum += (motor1.vel_cur - motor2.vel_cur);
             // char tempstr[32];
             // int length = sprintf(tempstr,"%d, %d\r\n",int(motor1.vel_cur * 1000),int(motor2.vel_cur * 1000));
             
             // int length = sprintf(tempstr,"%d\r\n",int(sum) * 1000);
+            // int length = sprintf(tempstr,"%d,%d,%d,%d,%d\r\n",int(motor1.vel_cmd_profile[motor1.vel_step] * 1000), int(motor1.vel_cur * 1000), int(fabs(motor1.vel_cur) * 1000),int(pid_motor1.err* 1000) , motor1.duty);
             // Serial1.write(tempstr,length);
             // Serial1.println(sum,5);
             // sprintf(tempstr,"%d %d %d %d %d",int(motor2.vel_cmd_profile[motor2.vel_step] * 1000), int(motor2.vel_cur * 1000), int(pid_motor2.err*10000),int(pid_motor2.err_int*10000),motor2.duty);
@@ -185,7 +187,7 @@ class PidController
             if(abs(motor1.duty) <= MINIMUM_DUTY && abs(motor1.duty) > 0)
             {
                 motor1.duty = MINIMUM_DUTY * motor1.dir;
-                if(pid_motor1.err * float(motor1.dir) < VERY_SMALL_FLOAT)
+                if(pid_motor1.err * float(motor1.dir) < VERY_SMALL_FLOAT) // low cmd, (v_cmd - v_cur > 0 & go_backward) or (v_cmd - v_cur < 0 & go_forward: low saturation)  
                 {
                     pid_motor1.err_int = pid_motor1.err_int_pre;
                 }
@@ -202,7 +204,7 @@ class PidController
             }
             else if(motor1.duty * motor1.dir < 0)
             {
-                motor1.dir *= -1;
+                // motor1.dir *= -1;
             }
             if(abs(motor2.duty) <= MINIMUM_DUTY && abs(motor2.duty) > 0)
             {
@@ -224,7 +226,7 @@ class PidController
             }
             else if(motor2.duty * motor2.dir < 0)
             {
-                motor2.dir *= -1;
+                // motor2.dir *= -1;
             }
             /* stop condition */
             if(fabs(motor1.vel_cmd_profile[motor1.vel_step]) < VERY_SMALL_FLOAT)
@@ -279,38 +281,40 @@ class PidController
 
         void  ChangeDir() __attribute__((always_inline))
         {
-            if(motor1.dir == MOTOR_NEUTRAL && motor1.state != MotorState::stop)
+            if( motor1.dir_pre != MOTOR_NEUTRAL && motor1.dir == MOTOR_NEUTRAL && motor1.state != MotorState::stop)
             {
                 digitalWrite(motor1.ccw_pin, LOW);
                 digitalWrite(motor1.cw_pin,  LOW);
                 motor1.state = MotorState::stop;
             }
-            else if(motor1.dir == MOTOR_BACKWARD)
+            else if(motor1.dir_pre != MOTOR_BACKWARD && motor1.dir == MOTOR_BACKWARD)
             {
                 digitalWrite(motor1.ccw_pin, LOW);
                 digitalWrite(motor1.cw_pin, HIGH);
             }
-            else if(motor1.dir == MOTOR_FORWARD)
+            else if(motor1.dir_pre != MOTOR_FORWARD && motor1.dir == MOTOR_FORWARD)
             {
                 digitalWrite(motor1.ccw_pin, HIGH);
                 digitalWrite(motor1.cw_pin, LOW);
             }
-            if(motor2.dir == MOTOR_NEUTRAL && motor2.state != MotorState::stop)
+            if(motor2.dir_pre != MOTOR_NEUTRAL && motor2.dir == MOTOR_NEUTRAL && motor2.state != MotorState::stop)
             {
                 digitalWrite(motor2.ccw_pin, LOW);
                 digitalWrite(motor2.cw_pin,  LOW);
                 motor2.state = MotorState::stop;
             }
-            else if(motor2.dir == MOTOR_BACKWARD)
+            else if(motor2.dir_pre != MOTOR_BACKWARD && motor2.dir == MOTOR_BACKWARD)
             {
                 digitalWrite(motor2.ccw_pin, HIGH);
                 digitalWrite(motor2.cw_pin, LOW);
             }
-            else if(motor2.dir == MOTOR_FORWARD)
+            else if(motor2.dir_pre != MOTOR_FORWARD && motor2.dir == MOTOR_FORWARD)
             {
                 digitalWrite(motor2.ccw_pin, LOW);
                 digitalWrite(motor2.cw_pin, HIGH);
             }
+            motor1.dir_pre = motor1.dir;
+            motor2.dir_pre = motor2.dir;
         }
 
         void SetDir() __attribute__((always_inline))
