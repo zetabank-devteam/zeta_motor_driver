@@ -8,6 +8,7 @@
 #define MINIMUM_DUTY            1
 #define MAXIMUM_DUTY            700 // caution! carefully change this value for preventing overdrive of motor driver
 #define MAXIMUM_VELOCITY        0.25f
+#define MINIMUM_VELOCITY        0.05f
 #define VERY_SMALL_FLOAT        0.001f
 #define VELOCITY_PROFILE_STEPS  5
 #define MIN_VELOCITY_ERROR      0.002f
