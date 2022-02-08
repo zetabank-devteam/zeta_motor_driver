@@ -239,8 +239,8 @@ void ConfigurationHelper::SetFactoryValue()
     SetEEPROM(BASE_ADDRESS_FW_VERSION, two_bytes);
     SetError(two_bytes);
     SetBaudrate(115200);
-    SetPGain(500.0f);
-    SetIGain(180.0f);
+    SetPGain(400.0f);
+    SetIGain(100.0f);
     SetDGain(0.0f);
     SetMaxSpeed(0.160f);
     SetMinSpeed(0.06f);

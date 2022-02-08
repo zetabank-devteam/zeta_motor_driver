@@ -1,7 +1,7 @@
 #ifndef ZETA_MOTOR_DRIVER_H_
 #define ZETA_MOTOR_DRIVER_H_
 // #define NO_ROS
-#define FW_VERSION "0.2.4"
+#define FW_VERSION "0.2.9"
 
 #include "src/configuration/pin_configuration.h"
 #include "src/serial_helper/serial_helper.h"
@@ -12,8 +12,8 @@
 #include <std_msgs/String.h>
 
 #define VEL_TRANSMIT_FREQUENCY     20
-#define CONTROL_FREQUENCY          30
-#define COMMAND_EXECUTE_FREQUENCY  100
+#define CONTROL_FREQUENCY          20
+#define COMMAND_EXECUTE_FREQUENCY  50
 #define MA_FILTER_SIZE             15
 #define NUM_TASK                   5
 
