@@ -4,6 +4,8 @@ using namespace zeta_motor_driver;
 
 void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 {
+    motor1.Init();
+    motor2.Init();
     memcpy(&motor1,&motor1_,sizeof(motor_t));
     memcpy(&motor2,&motor2_,sizeof(motor_t));
     memcpy(&pid_motor1,&pid_param,sizeof(pid_t));
@@ -23,6 +25,8 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
     braking_time = 10;
+    motor1.dir = MOTOR_FORWARD;
+    motor2.dir = MOTOR_FORWARD;
     motor1.state = MotorState::ready;
     motor2.state = MotorState::ready;
 }
