@@ -104,6 +104,8 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
     {
         motor2.vel_cmd = -1.0f * MINIMUM_VELOCITY;
     }
+    pid_motor1.InitError();
+    pid_motor2.InitError();
     //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
 }
 
