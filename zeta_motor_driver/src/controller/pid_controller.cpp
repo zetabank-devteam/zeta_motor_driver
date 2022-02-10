@@ -23,8 +23,8 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
     braking_time = 10;
-    motor1.state = MotorState::ready;
-    motor2.state = MotorState::ready;
+    motor1.Init();
+    motor2.Init();
 }
 
 
@@ -46,21 +46,62 @@ void PidController::BrakeMotor()
     ChangeDir();
 }
 
-void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool brake = false)
+void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool brake = false)
 {
+    float speed_motor1, speed_motor2 = 0.0f;
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
-    if(brake)
+    if(__builtin_expect(brake, 0))
     {
         motor1.Init();
         motor2.Init();
         motor1.state = MotorState::brake;
         motor2.state = MotorState::brake;
     }
-    if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
+    if(__builtin_expect(motor1.state == MotorState::brake && motor2.state == MotorState::brake,0))
     {
         return; // if brake before, no velocity change
+    }
+    if(__builtin_expect(speed_motor1_ > MAXIMUM_VELOCITY,0))
+    {
+        speed_motor1 = MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor1_ < -1.0f * MAXIMUM_VELOCITY,0))
+    {
+        speed_motor1 = -1.0f * MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor1_ < MINIMUM_VELOCITY && speed_motor1_ > VERY_SMALL_FLOAT,0))
+    {
+        speed_motor1 = MINIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor1_ < (-1.0f * VERY_SMALL_FLOAT) && speed_motor1_ > (-1.0f * MINIMUM_VELOCITY),0))
+    {
+        speed_motor1 = -1.0f * MINIMUM_VELOCITY;
+    }
+    else
+    {
+        speed_motor1 = speed_motor1_;
+    }
+    if(__builtin_expect(speed_motor2_ > MAXIMUM_VELOCITY,0))
+    {
+        speed_motor2 = MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor2_ < -1.0f * MAXIMUM_VELOCITY,0))
+    {
+        speed_motor2 = -1.0f * MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor2_ < MINIMUM_VELOCITY && speed_motor2_ > VERY_SMALL_FLOAT,0))
+    {
+        speed_motor2 = MINIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor2_ < (-1.0f * VERY_SMALL_FLOAT) && speed_motor2_ > (-1.0f * MINIMUM_VELOCITY),0))
+    {
+        speed_motor2 = -1.0f * MINIMUM_VELOCITY;
+    }
+    else
+    {
+        speed_motor2 = speed_motor2_;
     }
     if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
@@ -68,46 +109,10 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
     }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
-    if(motor1.vel_cmd > MAXIMUM_VELOCITY)
-    {
-        motor1.vel_cmd = MAXIMUM_VELOCITY;
-    }
-    else if(motor1.vel_cmd < -1.0f * MAXIMUM_VELOCITY)
-    {
-        motor1.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
-    }
-    else if(motor1.vel_cmd < MINIMUM_VELOCITY && motor1.vel_cmd > VERY_SMALL_FLOAT)
-    {
-        motor1.vel_cmd = MINIMUM_VELOCITY;
-    }
-    else if(motor1.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor1.vel_cmd > (-1.0f * MINIMUM_VELOCITY))
-    {
-        motor1.vel_cmd = -1.0f * MINIMUM_VELOCITY;
-    }
-    if(motor2.vel_cmd > MAXIMUM_VELOCITY)
-    {
-        motor2.vel_cmd = MAXIMUM_VELOCITY;
-    }
-    else if(motor2.vel_cmd < -1.0f * MAXIMUM_VELOCITY)
-    {
-        motor2.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
-    }
-    else if(motor2.vel_cmd < MINIMUM_VELOCITY && motor2.vel_cmd > VERY_SMALL_FLOAT)
-    {
-        motor2.vel_cmd = MINIMUM_VELOCITY;
-    }
-    else if(motor2.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor2.vel_cmd > (-1.0f * MINIMUM_VELOCITY))
-    {
-        motor2.vel_cmd = -1.0f * MINIMUM_VELOCITY;
-    }
-    for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
-    {
-        motor1.vel_cmd_profile[i] = motor1.vel_cur + (motor1.vel_cmd - motor1.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
-        motor2.vel_cmd_profile[i] = motor2.vel_cur + (motor2.vel_cmd - motor2.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
-    }
-    motor1.vel_step = 0;
-    motor2.vel_step = 0;
-    //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
+    pid_motor1.InitError();
+    pid_motor2.InitError();
+    motor1.duty = 0;
+    motor2.duty = 0;
 }
 
 void PidController::GetVelocity(float dest[])

@@ -213,12 +213,12 @@ void SerialHelper::SetVelocityMessage()
     uint8_t dir = 0;
     uint8_t two_bytes[2] = {RECEIVE_NO_DATA,};
     float   rotation_per_sec[2] = {motor1_state.vel_cur / TWO_PI / this -> wheel_radius, motor2_state.vel_cur / TWO_PI / this -> wheel_radius};
-    float   velocity_diff, velocity_linear, velocity_angular = 0.0f; // linear velocity, angular velocity
-    // reset buffer
+    float   velocity_diff, velocity_linear, velocity_angular = 0.0f;
+    // buffer clear
     memset(transmit_message, RECEIVE_NO_DATA, sizeof(uint8_t) * TX_BUFFER_SIZE);
     transmit_index = 0;
 
-    transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monotoring mode pid
+    transmit_message[transmit_index++] = static_cast<uint8_t>(ParameterID::pid_monitoring); // monitoring mode pid
     transmit_message[transmit_index++] = static_cast<uint8_t>(monitoring_unit);
     if(motor1_state.vel_cur > FLOAT32_ZERO)
     {
