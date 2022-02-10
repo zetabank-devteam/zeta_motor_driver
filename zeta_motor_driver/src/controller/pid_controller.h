@@ -68,8 +68,8 @@ class PidController
             Init()
             {
                 vel_cmd = vel_cur = position = 0.0f;
-                dir      = MOTOR_NEUTRAL;
-                dir_pre  = MOTOR_NEUTRAL;
+                dir      = MOTOR_FORWARD;
+                dir_pre  = MOTOR_FORWARD;
                 duty     = 0; // 0 ~ 1024
                 state    = MotorState::ready;
                 encoder.Init();
@@ -206,6 +206,10 @@ class PidController
             ChangeDir();
             MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
             MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
+            if(motor1.duty > 1) motor1.duty--;
+            else if(motor1.duty < -1) motor1.duty++;
+            if(motor2.duty > 1) motor2.duty--;
+            else if(motor2.duty < -1) motor2.duty++;
             pid_motor1.err_int_pre = pid_motor1.err_int;
             pid_motor2.err_int_pre = pid_motor2.err_int;
         }
@@ -276,8 +280,8 @@ class PidController
         {
             if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
             {
-                motor1.dir = MOTOR_NEUTRAL; // if zero input
-                pid_motor1.InitError();
+                // motor1.dir = MOTOR_NEUTRAL; // if zero input
+                // pid_motor1.InitError();
             }
             else if(motor1.vel_cmd < 0.0)
             {
@@ -290,8 +294,8 @@ class PidController
 
             if(fabs(motor2.vel_cmd) < VERY_SMALL_FLOAT)
             {
-                motor2.dir = MOTOR_NEUTRAL; // if zero input
-                pid_motor2.InitError();
+                // motor2.dir = MOTOR_NEUTRAL; // if zero input
+                // pid_motor2.InitError();
             }
             else if(motor2.vel_cmd < 0.0)
             {

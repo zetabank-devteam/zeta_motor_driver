@@ -4,8 +4,6 @@ using namespace zeta_motor_driver;
 
 void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 {
-    motor1.Init();
-    motor2.Init();
     memcpy(&motor1,&motor1_,sizeof(motor_t));
     memcpy(&motor2,&motor2_,sizeof(motor_t));
     memcpy(&pid_motor1,&pid_param,sizeof(pid_t));
@@ -25,10 +23,8 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
     braking_time = 10;
-    motor1.dir = MOTOR_NEUTRAL;
-    motor2.dir = MOTOR_NEUTRAL;
-    motor1.state = MotorState::ready;
-    motor2.state = MotorState::ready;
+    motor1.Init();
+    motor2.Init();
 }
 
 
@@ -107,11 +103,6 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     {
         speed_motor2 = speed_motor2_;
     }
-    // String mystring;
-    // char mychar[32];
-    // mystring += String(speed_motor1,3) + " " + String(motor1.vel_cmd,3) + " " + String(speed_motor2,3) + " " + String(motor2.vel_cmd,3);
-    // mystring.toCharArray(mychar,32);
-    // nh.loginfo(mychar);
     if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
         return; // if no speed change
@@ -122,7 +113,6 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     pid_motor2.InitError();
     motor1.duty = 0;
     motor2.duty = 0;
-    //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
 }
 
 void PidController::GetVelocity(float dest[])
