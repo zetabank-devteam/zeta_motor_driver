@@ -50,8 +50,9 @@ void PidController::BrakeMotor()
     ChangeDir();
 }
 
-void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool brake = false)
+void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool brake = false)
 {
+    float speed_motor1, speed_motor2 = 0.0f;
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
@@ -66,46 +67,61 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
     {
         return; // if brake before, no velocity change
     }
+    if(__builtin_expect(speed_motor1_ > MAXIMUM_VELOCITY,0))
+    {
+        speed_motor1 = MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor1_ < -1.0f * MAXIMUM_VELOCITY,0))
+    {
+        speed_motor1 = -1.0f * MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor1_ < MINIMUM_VELOCITY && speed_motor1_ > VERY_SMALL_FLOAT,0))
+    {
+        speed_motor1 = MINIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor1_ < (-1.0f * VERY_SMALL_FLOAT) && speed_motor1_ > (-1.0f * MINIMUM_VELOCITY),0))
+    {
+        speed_motor1 = -1.0f * MINIMUM_VELOCITY;
+    }
+    else
+    {
+        speed_motor1 = speed_motor1_;
+    }
+    if(__builtin_expect(speed_motor2_ > MAXIMUM_VELOCITY,0))
+    {
+        speed_motor2 = MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor2_ < -1.0f * MAXIMUM_VELOCITY,0))
+    {
+        speed_motor2 = -1.0f * MAXIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor2_ < MINIMUM_VELOCITY && speed_motor2_ > VERY_SMALL_FLOAT,0))
+    {
+        speed_motor2 = MINIMUM_VELOCITY;
+    }
+    else if(__builtin_expect(speed_motor2_ < (-1.0f * VERY_SMALL_FLOAT) && speed_motor2_ > (-1.0f * MINIMUM_VELOCITY),0))
+    {
+        speed_motor2 = -1.0f * MINIMUM_VELOCITY;
+    }
+    else
+    {
+        speed_motor2 = speed_motor2_;
+    }
+    // String mystring;
+    // char mychar[32];
+    // mystring += String(speed_motor1,3) + " " + String(motor1.vel_cmd,3) + " " + String(speed_motor2,3) + " " + String(motor2.vel_cmd,3);
+    // mystring.toCharArray(mychar,32);
+    // nh.loginfo(mychar);
     if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
         return; // if no speed change
     }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
-    if(__builtin_expect(motor1.vel_cmd > MAXIMUM_VELOCITY,0))
-    {
-        motor1.vel_cmd = MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(motor1.vel_cmd < -1.0f * MAXIMUM_VELOCITY,0))
-    {
-        motor1.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(motor1.vel_cmd < MINIMUM_VELOCITY && motor1.vel_cmd > VERY_SMALL_FLOAT,0))
-    {
-        motor1.vel_cmd = MINIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(motor1.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor1.vel_cmd > (-1.0f * MINIMUM_VELOCITY),0))
-    {
-        motor1.vel_cmd = -1.0f * MINIMUM_VELOCITY;
-    }
-    if(__builtin_expect(motor2.vel_cmd > MAXIMUM_VELOCITY,0))
-    {
-        motor2.vel_cmd = MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(motor2.vel_cmd < -1.0f * MAXIMUM_VELOCITY,0))
-    {
-        motor2.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(motor2.vel_cmd < MINIMUM_VELOCITY && motor2.vel_cmd > VERY_SMALL_FLOAT,0))
-    {
-        motor2.vel_cmd = MINIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(motor2.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor2.vel_cmd > (-1.0f * MINIMUM_VELOCITY),0))
-    {
-        motor2.vel_cmd = -1.0f * MINIMUM_VELOCITY;
-    }
     pid_motor1.InitError();
     pid_motor2.InitError();
+    motor1.duty = 0;
+    motor2.duty = 0;
     //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
 }
 

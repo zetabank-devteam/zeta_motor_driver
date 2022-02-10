@@ -206,9 +206,6 @@ class PidController
             ChangeDir();
             MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
             MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
-            // char tempstr[32];
-            // sprintf(tempstr,"%d %d",motor1.duty, motor2.duty);
-            // nh.loginfo(tempstr);
             pid_motor1.err_int_pre = pid_motor1.err_int;
             pid_motor2.err_int_pre = pid_motor2.err_int;
         }
@@ -237,7 +234,7 @@ class PidController
             return pps / ppr * TWO_PI * wheel_radius;
         }
 
-        inline __attribute__((always_inline)) void  ChangeDir()
+        inline __attribute__((always_inline)) void ChangeDir()
         {
             if( motor1.dir_pre != MOTOR_NEUTRAL && motor1.dir == MOTOR_NEUTRAL && motor1.state != MotorState::stop)
             {
