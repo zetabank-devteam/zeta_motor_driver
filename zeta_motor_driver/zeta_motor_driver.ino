@@ -1,13 +1,5 @@
 #include "zeta_motor_driver.h"
-// /----------------------------------------------------------------------------\      
-// |                         Serial Data Format                                 |
-// | start1  start2  length*  PID**   data1 ... dataN   chksum*** end1    end2  |  
-// |  0xAA    0xBB     N       -       -          -       -       0xDD    0x55  |
-// |                                                                            |
-// \----------------------------------------------------------------------------/
-// *length: length of payload (N)
-// **PID: Parameter ID.
-// ***chksum = sum of payload & length = (len + d1 + d2 + ... dN) & 0xFF
+
 void setup() {
     Serial1.begin(115200);
     InitDriver();
@@ -65,14 +57,7 @@ void RunPeriodicEvent()
     static uint32_t time_pre[NUM_TASK];
     if((time_cur - time_pre[task_control_motor]) > (1000 / CONTROL_FREQUENCY))
     {
-        if(serial_helper.IsBrake())
-        {
-            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, true);
-        }
-        else
-        {
-            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd);
-        }
+        controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }
@@ -140,91 +125,18 @@ void ExecuteCommand()
     }
 }
 
-
 void loop()
 {
     RunPeriodicEvent();
 }
 
 #ifdef NO_ROS
-#if (CONTROL_STREAM == Serial)
-void serialEvent()
-{
-    static uint8_t data[6];
-    static int     data_length = 0;
-    while(CONTROL_STREAM.available())
-    {
-        data[data_length++] = CONTROL_STREAM.read();
-        delay(1);
-    }
-    //if(data_length == 6)
-    {
-        serial_helper.SetMessage(data, data_length);
-        data_length = 0;
-        memset(data,0xff,6);
-    }
-}
-#elif (CONTROL_STREAM == Serial1)
-void serialEvent1()
-{
-    static uint8_t data[6];
-    static int     data_length = 0;
-    while(CONTROL_STREAM.available())
-    {
-        data[data_length++] = CONTROL_STREAM.read();
-        delay(1);
-    }
-    //if(data_length == 6)
-    {
-        serial_helper.SetMessage(data, data_length);
-        data_length = 0;
-        memset(data,0xff,6);
-    }
-}
-#endif /* CONTROL_STREAM */
+
 #else
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
 {
     serial_helper.SetMessage(msg.data, (uint8_t)msg.data_length);
 }
 #endif /* NO_ROS */
-// void serialEvent1()
-// {
-//     char c;
-//     uint8_t forward[]  = {0x01,0x03,0x00,0xa0,0x00,0xa0};
-//     uint8_t stop[]     = {0x01,0x03,0x00,0x00,0x00,0x00};
-//     uint8_t backward[] = {0x01,0x00,0x00,0xa0,0x00,0xa0};
-//     uint8_t turn_cw[]  = {0x01,0x01,0x00,0xa0,0x00,0xa0};
-//     uint8_t turn_ccw[] = {0x01,0x02,0x00,0xa0,0x00,0xa0};
-//     while(Serial1.available())
-//     {
-//         c = Serial1.read();
-//     }
-//     switch(c)
-//     {
-//         case 'w':
-//             serial_helper.SetMessage(forward,sizeof(forward));
-//             Serial1.println("forward!!!");
-//             break;
-//         case 's':
-//             serial_helper.SetMessage(stop,sizeof(stop));
-//             Serial1.println("stop!!!");
-//             break;
-//         case 'x':
-//             serial_helper.SetMessage(backward,sizeof(backward));
-//             Serial1.println("backward!!!");
-//             break;
-//         case 'q':
-//             serial_helper.SetMessage(turn_cw,sizeof(turn_cw));
-//             Serial1.println("turn cw!!!");
-//             break;
-//         case 'e':
-//             serial_helper.SetMessage(turn_ccw,sizeof(turn_ccw));
-//             Serial1.println("turn ccw!!!");
-//             break;
 
-//         default:
-//             break;
-//     }
-// }
 /* zeta_motor_driver.ino */
