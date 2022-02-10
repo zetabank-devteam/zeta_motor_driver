@@ -25,8 +25,8 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
     braking_time = 10;
-    motor1.dir = MOTOR_FORWARD;
-    motor2.dir = MOTOR_FORWARD;
+    motor1.dir = MOTOR_NEUTRAL;
+    motor2.dir = MOTOR_NEUTRAL;
     motor1.state = MotorState::ready;
     motor2.state = MotorState::ready;
 }
