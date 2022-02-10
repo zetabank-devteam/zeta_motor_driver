@@ -113,7 +113,7 @@ class PidController
         void GetMotorState(MotorState[]);
 
         void ResetMotor(); // reset motor state
-        void ControlVel() __attribute__((always_inline))
+        inline __attribute__((always_inline)) void ControlVel()
         {
             static uint32_t time_control_pre;
             static float    sampling_time;
@@ -123,23 +123,17 @@ class PidController
                 sampling_time = float(time_control_cur - time_control_pre) / 1000000.0;
             }
             time_control_pre = time_control_cur;
-            /* measurement block */
             if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
             {
                 BrakeMotor();
                 return;
             }
             SetDir();
+            /* measurement block */
             motor1.vel_cur  =  float(motor1.dir) * pps_to_velocity(float(motor1.encoder.pulse_count) / sampling_time);
             motor2.vel_cur  =  float(motor2.dir) * pps_to_velocity(float(motor2.encoder.pulse_count) / sampling_time);
             motor1.position += float(motor1.dir) * float(motor1.encoder.pulse_count) / ppr * TWO_PI;
             motor2.position += float(motor2.dir) * float(motor2.encoder.pulse_count) / ppr * TWO_PI;
-            
-            // nh.loginfo("=====================================");
-            // String mystring = String(motor2.vel_cur) + "  " + String(motor2.encoder.pulse_count) + "  " + String(sampling_time,5);
-            // char tempstr1[32];
-            // mystring.toCharArray(tempstr1,32);
-            // nh.loginfo(tempstr1);
 
             motor1.encoder.pulse_count = 0;
             motor2.encoder.pulse_count = 0;
@@ -170,23 +164,6 @@ class PidController
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty         += round(pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd);
             
-            // static float sum;
-            // sum += (motor1.vel_cur - motor2.vel_cur);
-            // char tempstr3[32];
-            // sprintf(tempstr3,"%d %d %d %d %d",int(motor2.vel_cur * 1000), int(motor2.vel_cmd_profile[motor2.vel_step] * 1000),
-            //  int(pid_motor2.err * 1000), int(pid_motor2.err_int * 1000), motor2.duty);
-            // nh.loginfo(tempstr3);
-            // int length = sprintf(tempstr,"%d, %d\r\n",int(motor1.vel_cur * 1000),int(motor2.vel_cur * 1000));
-            
-            // int length = sprintf(tempstr,"%d\r\n",int(sum) * 1000);
-            // int length = sprintf(tempstr,"%d,%d,%d,%d,%d\r\n",int(motor1.vel_cmd_profile[motor1.vel_step] * 1000), int(motor1.vel_cur * 1000), int(fabs(motor1.vel_cur) * 1000),int(pid_motor1.err* 1000) , motor1.duty);
-            // Serial1.write(tempstr,length);
-            // Serial1.println(sum,5);
-            // sprintf(tempstr,"%d %d %d %d %d",int(motor2.vel_cmd_profile[motor2.vel_step] * 1000), int(motor2.vel_cur * 1000), int(pid_motor2.err*10000),int(pid_motor2.err_int*10000),motor2.duty);
-            // nh.loginfo(tempstr);
-
-
-            /* profile generator block */
             if(motor1.duty * motor1.dir <= MINIMUM_DUTY && motor1.duty * motor1.dir > 0) // 0 < duty < MIN or -MIN < duty < 0
             {
                 motor1.duty = MINIMUM_DUTY * motor1.dir;
@@ -255,12 +232,12 @@ class PidController
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
 
-        float pps_to_velocity(float pps) __attribute__((always_inline))
+        inline __attribute__((always_inline)) float pps_to_velocity(float pps)
         {
             return pps / ppr * TWO_PI * wheel_radius;
         }
 
-        void  ChangeDir() __attribute__((always_inline))
+        inline __attribute__((always_inline)) void  ChangeDir()
         {
             if( motor1.dir_pre != MOTOR_NEUTRAL && motor1.dir == MOTOR_NEUTRAL && motor1.state != MotorState::stop)
             {
@@ -298,7 +275,7 @@ class PidController
             motor2.dir_pre = motor2.dir;
         }
 
-        void SetDir() __attribute__((always_inline))
+        inline __attribute__((always_inline)) void SetDir() 
         {
             if(fabs(motor1.vel_cmd) < VERY_SMALL_FLOAT)
             {
@@ -328,7 +305,8 @@ class PidController
                 motor2.dir = MOTOR_FORWARD;
             }
         }
-        void CheckWheelFloating() __attribute__((always_inline))
+
+        inline __attribute__((always_inline)) void CheckWheelFloating()
         {
             static int count;
             if((digitalRead(motor1.float_pin) || digitalRead(motor2.float_pin)))
