@@ -55,14 +55,14 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
 #ifdef ENABLE_FLOAT_SENSING
     CheckWheelFloating();
 #endif
-    if(brake)
+    if(__builtin_expect(brake, 0))
     {
         motor1.Init();
         motor2.Init();
         motor1.state = MotorState::brake;
         motor2.state = MotorState::brake;
     }
-    if(motor1.state == MotorState::brake && motor2.state == MotorState::brake)
+    if(__builtin_expect(motor1.state == MotorState::brake && motor2.state == MotorState::brake,0))
     {
         return; // if brake before, no velocity change
     }
@@ -72,45 +72,38 @@ void PidController::SetMotorSpeed(float speed_motor1, float speed_motor2, bool b
     }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
-    if(motor1.vel_cmd > MAXIMUM_VELOCITY)
+    if(__builtin_expect(motor1.vel_cmd > MAXIMUM_VELOCITY,0))
     {
         motor1.vel_cmd = MAXIMUM_VELOCITY;
     }
-    else if(motor1.vel_cmd < -1.0f * MAXIMUM_VELOCITY)
+    else if(__builtin_expect(motor1.vel_cmd < -1.0f * MAXIMUM_VELOCITY,0))
     {
         motor1.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
     }
-    else if(motor1.vel_cmd < MINIMUM_VELOCITY && motor1.vel_cmd > VERY_SMALL_FLOAT)
+    else if(__builtin_expect(motor1.vel_cmd < MINIMUM_VELOCITY && motor1.vel_cmd > VERY_SMALL_FLOAT,0))
     {
         motor1.vel_cmd = MINIMUM_VELOCITY;
     }
-    else if(motor1.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor1.vel_cmd > (-1.0f * MINIMUM_VELOCITY))
+    else if(__builtin_expect(motor1.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor1.vel_cmd > (-1.0f * MINIMUM_VELOCITY),0))
     {
         motor1.vel_cmd = -1.0f * MINIMUM_VELOCITY;
     }
-    if(motor2.vel_cmd > MAXIMUM_VELOCITY)
+    if(__builtin_expect(motor2.vel_cmd > MAXIMUM_VELOCITY,0))
     {
         motor2.vel_cmd = MAXIMUM_VELOCITY;
     }
-    else if(motor2.vel_cmd < -1.0f * MAXIMUM_VELOCITY)
+    else if(__builtin_expect(motor2.vel_cmd < -1.0f * MAXIMUM_VELOCITY,0))
     {
         motor2.vel_cmd = -1.0f * MAXIMUM_VELOCITY;
     }
-    else if(motor2.vel_cmd < MINIMUM_VELOCITY && motor2.vel_cmd > VERY_SMALL_FLOAT)
+    else if(__builtin_expect(motor2.vel_cmd < MINIMUM_VELOCITY && motor2.vel_cmd > VERY_SMALL_FLOAT,0))
     {
         motor2.vel_cmd = MINIMUM_VELOCITY;
     }
-    else if(motor2.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor2.vel_cmd > (-1.0f * MINIMUM_VELOCITY))
+    else if(__builtin_expect(motor2.vel_cmd < (-1.0f * VERY_SMALL_FLOAT) && motor2.vel_cmd > (-1.0f * MINIMUM_VELOCITY),0))
     {
         motor2.vel_cmd = -1.0f * MINIMUM_VELOCITY;
     }
-    for(int i = 0; i < VELOCITY_PROFILE_STEPS; i++)
-    {
-        motor1.vel_cmd_profile[i] = motor1.vel_cur + (motor1.vel_cmd - motor1.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
-        motor2.vel_cmd_profile[i] = motor2.vel_cur + (motor2.vel_cmd - motor2.vel_cur) / float(VELOCITY_PROFILE_STEPS) * float(i + 1);
-    }
-    motor1.vel_step = 0;
-    motor2.vel_step = 0;
     //Serial1.print(pid_motor1.kp);Serial1.print(", ");Serial1.print(pid_motor1.ki);Serial1.print(", ");Serial1.println(pid_motor1.kd);
 }
 
