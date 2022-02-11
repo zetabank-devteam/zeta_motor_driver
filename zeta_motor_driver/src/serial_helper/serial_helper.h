@@ -10,18 +10,9 @@
 #define RX_BUFFER_SIZE          16
 
 /* comm */
-// #define START_BYTE1             0xAA
-// #define START_BYTE2             0xBB
-// #define END_BYTE1               0xDD
-// #define END_BYTE2               0x55
 #define RECEIVE_NO_DATA         0x00
 
-// #define POS_START_BYTE1         0
-// #define POS_START_BYTE2         1
-// #define POS_LENGTH              2
-// #define POS_CHECKSUM            3
 #define POS_PID                 0
-// #define POS_DATA_START          4
 
 #define MOTOR_FORWARD           1
 #define MOTOR_BACKWARD          -1
