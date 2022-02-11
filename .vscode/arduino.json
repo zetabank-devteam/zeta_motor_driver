@@ -1,6 +1,0 @@
-{
-    "configuration": "cpu=atmega2560",
-    "board": "arduino:avr:mega",
-    "sketch": "zeta_motor_driver\\zeta_motor_driver.ino",
-    "port": "COM10"
-}
