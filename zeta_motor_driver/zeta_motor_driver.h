@@ -13,6 +13,7 @@
 #define VEL_TRANSMIT_FREQUENCY     20
 #define CONTROL_FREQUENCY          30
 #define COMMAND_EXECUTE_FREQUENCY  50
+#define VERSION_PUBLISH_FREQUENCY  0.1
 #define MA_FILTER_SIZE             15
 #define NUM_TASK                   5
 
@@ -40,9 +41,9 @@ enum task_name
     task_control_motor = 0,
     task_execute_command,
     task_transmit_velocity,
+    task_publish_version,
 };
 
-#ifndef NO_ROS
 ros::NodeHandle nh;
 void SerialInputCallback(const std_msgs::UInt8MultiArray);
 ros::Subscriber<std_msgs::UInt8MultiArray> serial_input_subscriber("motor_driver_serial_input", &SerialInputCallback);
@@ -50,6 +51,5 @@ std_msgs::UInt8MultiArray serial_output_msg;
 ros::Publisher serial_output_publisher("motor_driver_serial_output", &serial_output_msg);
 std_msgs::String fw_version_msg;
 ros::Publisher fw_version_publisher("driver_fw_version", &fw_version_msg);
-#endif
 
 #endif /* ZETA_MOTOR_DRIVER_H_ */

@@ -238,7 +238,7 @@ void ConfigurationHelper::SetFactoryValue()
     SetConfigurable(true);
     SetEEPROM(BASE_ADDRESS_FW_VERSION, two_bytes);
     SetError(two_bytes);
-    SetBaudrate(115200);
+    SetBaudrate(115200); // UBRR?
     SetPGain(1000.0f);
     SetIGain(100.0f);
     SetDGain(0.0f);

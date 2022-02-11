@@ -63,52 +63,16 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     {
         return; // if brake before, no velocity change
     }
-    if(__builtin_expect(speed_motor1_ > MAXIMUM_VELOCITY,0))
-    {
-        speed_motor1 = MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(speed_motor1_ < -1.0f * MAXIMUM_VELOCITY,0))
-    {
-        speed_motor1 = -1.0f * MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(speed_motor1_ < MINIMUM_VELOCITY && speed_motor1_ > VERY_SMALL_FLOAT,0))
-    {
-        speed_motor1 = MINIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(speed_motor1_ < (-1.0f * VERY_SMALL_FLOAT) && speed_motor1_ > (-1.0f * MINIMUM_VELOCITY),0))
-    {
-        speed_motor1 = -1.0f * MINIMUM_VELOCITY;
-    }
-    else
-    {
-        speed_motor1 = speed_motor1_;
-    }
-    if(__builtin_expect(speed_motor2_ > MAXIMUM_VELOCITY,0))
-    {
-        speed_motor2 = MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(speed_motor2_ < -1.0f * MAXIMUM_VELOCITY,0))
-    {
-        speed_motor2 = -1.0f * MAXIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(speed_motor2_ < MINIMUM_VELOCITY && speed_motor2_ > VERY_SMALL_FLOAT,0))
-    {
-        speed_motor2 = MINIMUM_VELOCITY;
-    }
-    else if(__builtin_expect(speed_motor2_ < (-1.0f * VERY_SMALL_FLOAT) && speed_motor2_ > (-1.0f * MINIMUM_VELOCITY),0))
-    {
-        speed_motor2 = -1.0f * MINIMUM_VELOCITY;
-    }
-    else
-    {
-        speed_motor2 = speed_motor2_;
-    }
+    speed_motor1 = ConstrainSpeed(speed_motor1_);
+    speed_motor2 = ConstrainSpeed(speed_motor2_);
     if((fabs(motor1.vel_cmd - speed_motor1) < VERY_SMALL_FLOAT) && (fabs(motor2.vel_cmd - speed_motor2) < VERY_SMALL_FLOAT))
     {
         return; // if no speed change
     }
     motor1.vel_cmd = speed_motor1;
     motor2.vel_cmd = speed_motor2;
+    motor1.vel_cmd < 0.0 ? (motor1.dir = MOTOR_BACKWARD) : (motor1.dir = MOTOR_FORWARD);
+    motor2.vel_cmd < 0.0 ? (motor2.dir = MOTOR_BACKWARD) : (motor2.dir = MOTOR_FORWARD);
     pid_motor1.InitError();
     pid_motor2.InitError();
     motor1.duty = 0;

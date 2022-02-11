@@ -3,16 +3,11 @@
 void setup() {
     Serial1.begin(115200);
     InitDriver();
-#ifdef NO_ROS
-    Serial.begin(115200);
-#else
     InitROS();
-#endif
     millis();
     delay(1);
 }
 
-#ifndef NO_ROS
 void InitROS()
 {
     nh.getHardware()->setBaud(serial_helper.GetBaudrate());
@@ -23,7 +18,6 @@ void InitROS()
     serial_output_msg.data = (uint8_t*)malloc(sizeof(uint8_t) * TX_BUFFER_SIZE);
     fw_version_msg.data = FW_VERSION;
 }
-#endif
 
 void InitDriver()
 {
@@ -51,15 +45,22 @@ void read_encoder2()
     controller.read_encoder2();
 }
 
-void RunPeriodicEvent()
+inline __attribute__((always_inline)) void RunPeriodicEvent()
 {
     static unsigned long last_control_motor, last_transmit_data, last_execute_command;
     unsigned long time_cur = millis();
     static uint32_t time_pre[NUM_TASK];
     if((time_cur - time_pre[task_control_motor]) > (1000 / CONTROL_FREQUENCY))
     {
-        controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,
-            serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
+        if(nh.connected())
+        {
+            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
+        }
+        else
+        {
+            controller.SetMotorSpeed(0,0, false);
+        }
+        
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }
@@ -75,16 +76,16 @@ void RunPeriodicEvent()
         TransmitVelocity();
         time_pre[task_transmit_velocity] = time_cur;
     }
-    if((time_cur - time_pre[3]) > (1000 / 0.1))
+    time_cur = millis();
+    if((time_cur - time_pre[task_publish_version]) > (1000 / VERSION_PUBLISH_FREQUENCY))
     {
-        fw_version_publisher.publish(&fw_version_msg);
+        if(nh.connected()) fw_version_publisher.publish(&fw_version_msg);
+        time_pre[task_publish_version] = time_cur;
     }
-#ifndef NO_ROS
     nh.spinOnce();
-#endif
 }
 
-void TransmitVelocity()
+inline __attribute__((always_inline)) void TransmitVelocity()
 {
     float vel[2];
     float pos[2];
@@ -95,31 +96,16 @@ void TransmitVelocity()
     serial_helper.motor1_state.position = pos[0];
     serial_helper.motor2_state.position = pos[1];
     serial_helper.SetVelocityMessage();
-#ifndef NO_ROS
     serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
     serial_output_publisher.publish(&serial_output_msg);
-#else
-    uint8_t  receive_buf[RX_BUFFER_SIZE];
-    uint32_t receive_index;
-    serial_helper.GetMessage(receive_buf, &receive_index);
-    // Serial1.write(receive_buf, receive_index);
-#endif
-    //Serial1.print(serial_helper.motor1_state.vel_cur,3);Serial1.print(", ");Serial1.println(serial_helper.motor2_state.vel_cur,3);
 }
 
-void ExecuteCommand()
+inline __attribute__((always_inline)) void ExecuteCommand()
 {
     if(serial_helper.ExecuteCommand())
     {
-#ifndef NO_ROS
         serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
         serial_output_publisher.publish(&serial_output_msg);
-#else
-        uint8_t  receive_buf[RX_BUFFER_SIZE];
-        uint32_t receive_index;
-        serial_helper.GetMessage(receive_buf,&receive_index);
-        CONTROL_STREAM.write(receive_buf,receive_index);
-#endif
     }
 }
 
@@ -128,13 +114,9 @@ void loop()
     RunPeriodicEvent();
 }
 
-#ifdef NO_ROS
-
-#else
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)
 {
     serial_helper.SetMessage(msg.data, (uint8_t)msg.data_length);
 }
-#endif /* NO_ROS */
 
 /* zeta_motor_driver.ino */
