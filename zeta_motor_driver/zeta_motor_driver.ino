@@ -21,6 +21,7 @@ void InitROS()
     nh.advertise(serial_output_publisher);
     nh.subscribe(serial_input_subscriber);
     serial_output_msg.data = (uint8_t*)malloc(sizeof(uint8_t) * TX_BUFFER_SIZE);
+    fw_version_msg.data = FW_VERSION;
 }
 #endif
 
@@ -74,13 +75,9 @@ void RunPeriodicEvent()
         TransmitVelocity();
         time_pre[task_transmit_velocity] = time_cur;
     }
-    if((time_cur - time_pre[3]) > (1000 / 1))
+    if((time_cur - time_pre[3]) > (1000 / 0.1))
     {
-        // uint8_t sending[6] = {0x01, 0x03, 0x01, 0x0c, 0x01, 0x0c};
-        // memcpy(test_msg.data,sending,6);
-        // test_msg.data_length = 6;
-        // test_publisher.publish(&test_msg);
-        // time_pre[3] = time_cur;
+        fw_version_publisher.publish(&fw_version_msg);
     }
 #ifndef NO_ROS
     nh.spinOnce();
