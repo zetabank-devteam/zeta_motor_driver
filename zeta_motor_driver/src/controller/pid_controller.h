@@ -18,13 +18,8 @@
 // #define ENABLE_FLOAT_SENSING // uncomment it for activating wheel drop sensing
 #define WHEEL_FLOATING_THRESHOLD  5
 
-#ifdef TEST_ROBOT
 #define MOT1_TIMER  Timer3
 #define MOT2_TIMER  Timer1
-#else
-#define MOT1_TIMER  Timer1
-#define MOT2_TIMER  Timer3
-#endif
 
 #include "ros.h"
 extern ros::NodeHandle nh;
@@ -54,8 +49,8 @@ class PidController
         typedef struct
         {
             uint8_t    pwm_pin;
-            uint8_t    cw_pin;
-            uint8_t    ccw_pin;
+            uint8_t    dir_pin;
+            uint8_t    start_pin;
             uint8_t    float_pin;
             int        dir;
             int        dir_pre;
@@ -188,27 +183,23 @@ class PidController
         float     wheel_radius;
         pid_t     pid_motor1, pid_motor2;
         inline __attribute__((always_inline)) float pps_to_velocity(float pps) {return pps / ppr * TWO_PI * wheel_radius;}
-        inline __attribute__((always_inline)) void ChangeDir()
+        inline __attribute__((always_inline)) void  ChangeDir()
         {
             if(motor1.dir_pre != MOTOR_BACKWARD && motor1.dir == MOTOR_BACKWARD)
-            {
-                digitalWrite(motor1.ccw_pin, LOW);
-                digitalWrite(motor1.cw_pin, HIGH);
+            {// TODO: check direction for each wheel
+                digitalWrite(motor1.dir_pin, LOW);
             }
             else if(motor1.dir_pre != MOTOR_FORWARD && motor1.dir == MOTOR_FORWARD)
             {
-                digitalWrite(motor1.ccw_pin, HIGH);
-                digitalWrite(motor1.cw_pin, LOW);
+                digitalWrite(motor1.dir_pin, HIGH);
             }
             if(motor2.dir_pre != MOTOR_BACKWARD && motor2.dir == MOTOR_BACKWARD)
             {
-                digitalWrite(motor2.ccw_pin, HIGH);
-                digitalWrite(motor2.cw_pin, LOW);
+                digitalWrite(motor2.dir_pin, HIGH);
             }
             else if(motor2.dir_pre != MOTOR_FORWARD && motor2.dir == MOTOR_FORWARD)
             {
-                digitalWrite(motor2.ccw_pin, LOW);
-                digitalWrite(motor2.cw_pin, HIGH);
+                digitalWrite(motor2.dir_pin, LOW);
             }
             motor1.dir_pre = motor1.dir;
             motor2.dir_pre = motor2.dir;

@@ -9,19 +9,21 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     memcpy(&pid_motor1,&pid_param,sizeof(pid_t));
     memcpy(&pid_motor2,&pid_param,sizeof(pid_t));
     pinMode(motor1.pwm_pin,   OUTPUT);
-    pinMode(motor1.cw_pin,    OUTPUT);
-    pinMode(motor1.ccw_pin,   OUTPUT);
+    pinMode(motor1.dir_pin,   OUTPUT);
+    pinMode(motor1.start_pin, OUTPUT);
     pinMode(motor1.float_pin, INPUT_PULLUP);
     pinMode(motor1.encoder.encoder_pin, INPUT);
     pinMode(motor2.pwm_pin,   OUTPUT);
-    pinMode(motor2.cw_pin,    OUTPUT);
-    pinMode(motor2.ccw_pin,   OUTPUT);
+    pinMode(motor2.dir_pin,   OUTPUT);
+    pinMode(motor2.start_pin, OUTPUT);
     pinMode(motor2.float_pin, INPUT_PULLUP);
     pinMode(motor2.encoder.encoder_pin, INPUT);
     MOT1_TIMER.initialize(1000000/PWM_FREQUENCY);
     MOT2_TIMER.initialize(1000000/PWM_FREQUENCY);
     MOT1_TIMER.pwm(motor1.pwm_pin,0);
     MOT2_TIMER.pwm(motor2.pwm_pin,0);
+    digitalWrite(motor1.start_pin, HIGH); // HIGH = run
+    digitalWrite(motor2.start_pin, HIGH);
     braking_time = 10;
     motor1.Init();
     motor2.Init();

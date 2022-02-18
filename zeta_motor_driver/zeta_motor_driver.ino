@@ -1,7 +1,6 @@
 #include "zeta_motor_driver.h"
 
 void setup() {
-    Serial1.begin(115200);
     InitDriver();
     InitROS();
     millis();
@@ -26,8 +25,8 @@ void InitDriver()
     pid_param.kp = serial_helper.GetPGain();
     pid_param.ki = serial_helper.GetIGain();
     pid_param.kd = serial_helper.GetDGain();
-    motor1.encoder.encoder_pin = MOT1_ENCODER_PIN;
-    motor2.encoder.encoder_pin = MOT2_ENCODER_PIN;
+    motor1.encoder.encoder_pin = MOTR_ENCODER_PIN;
+    motor2.encoder.encoder_pin = MOTL_ENCODER_PIN;
     controller.SetPPR(serial_helper.GetPPR());
     controller.SetWheelRadius(serial_helper.GetWheelRadius());
     controller.Begin(motor1, motor2, pid_param);
@@ -47,20 +46,21 @@ void read_encoder2()
 
 inline __attribute__((always_inline)) void RunPeriodicEvent()
 {
+    static int cnt;
     static unsigned long last_control_motor, last_transmit_data, last_execute_command;
     unsigned long time_cur = millis();
     static uint32_t time_pre[NUM_TASK];
     if((time_cur - time_pre[task_control_motor]) > (1000 / CONTROL_FREQUENCY))
     {
-        if(nh.connected())
-        {
-            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
-        }
-        else
-        {
-            controller.SetMotorSpeed(0,0, false);
-        }
-        
+       if(nh.connected())
+       {
+           controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
+       }
+       else
+       {
+           controller.SetMotorSpeed(0,0, false);
+       }
+        cnt++;
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }

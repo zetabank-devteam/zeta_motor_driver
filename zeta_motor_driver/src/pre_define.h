@@ -2,5 +2,5 @@
 #define PRE_DEFINE_H_
 // #define SERIAL_DEBUG
 // #define TEST_ROBOT
-// #define SET_PARAM_ENABLE
+#define SET_PARAM_ENABLE
 #endif
