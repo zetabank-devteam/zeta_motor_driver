@@ -30,6 +30,8 @@ void InitDriver()
     controller.SetPPR(serial_helper.GetPPR());
     controller.SetWheelRadius(serial_helper.GetWheelRadius());
     controller.Begin(motor1, motor2, pid_param);
+    pinMode(motor1.encoder.encoder_pin,INPUT_PULLUP);
+    pinMode(motor2.encoder.encoder_pin,INPUT_PULLUP);   
     attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin), read_encoder1, CHANGE);
     attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin), read_encoder2, CHANGE);
 }

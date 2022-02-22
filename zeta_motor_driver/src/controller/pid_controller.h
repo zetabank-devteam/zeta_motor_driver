@@ -5,13 +5,13 @@
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
 // #define MINIMUM_DUTY  80  // actual minimum speed(0.06m/s)
-#define MINIMUM_DUTY            1
-#define MAXIMUM_DUTY            700 // caution! carefully change this value for preventing overdrive of motor driver
-#define MAXIMUM_VELOCITY        0.25f
-#define MINIMUM_VELOCITY        0.05f
+#define MINIMUM_DUTY            0
+#define MAXIMUM_DUTY            1000 // caution! carefully change this value for preventing overdrive of motor driver
+#define MAXIMUM_VELOCITY        0.320f
+#define MINIMUM_VELOCITY        0.016f
 #define VERY_SMALL_FLOAT        0.001f // epsilon
 #define MIN_VELOCITY_ERROR      0.002f
-#define PWM_FREQUENCY           5000UL // the most good wave form & performance(min 8cm/s available)
+#define PWM_FREQUENCY           20000UL // upper than hearing range
 #define MOTOR_FORWARD           1
 #define MOTOR_BACKWARD          -1
 #define MOTOR_NEUTRAL           0
@@ -137,11 +137,11 @@ class PidController
             pid_motor2.err_derv = (pid_motor2.err - pid_motor2.err_pre) / sampling_time;
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty         += round(pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd);
-            if(motor1.duty * motor1.dir <= MINIMUM_DUTY && motor1.duty * motor1.dir > 0) // 0 < duty < MIN or -MIN < duty < 0
-            {
-                motor1.duty = MINIMUM_DUTY * motor1.dir;
-                motor1.state = MotorState::run;
-            }
+            // if(motor1.duty * motor1.dir <= MINIMUM_DUTY && motor1.duty * motor1.dir > 0) // 0 < duty < MIN or -MIN < duty < 0
+            // {
+            //     motor1.duty = MINIMUM_DUTY * motor1.dir;
+            //     motor1.state = MotorState::run;
+            // }
             if(abs(motor1.duty) >= MAXIMUM_DUTY)
             {
                 motor1.duty = MAXIMUM_DUTY * motor1.dir;
@@ -149,11 +149,11 @@ class PidController
                 motor1.state = MotorState::run;
             }
             if(motor1.duty * motor1.dir < 0) motor1.dir *= -1; // if reverse disturbance
-            if(motor2.duty * motor2.dir <= MINIMUM_DUTY && motor2.duty * motor2.dir > 0) 
-            {
-                motor2.duty = MINIMUM_DUTY * motor2.dir;
-                motor2.state = MotorState::run;
-            }
+            // if(motor2.duty * motor2.dir <= MINIMUM_DUTY && motor2.duty * motor2.dir > 0) 
+            // {
+            //     motor2.duty = MINIMUM_DUTY * motor2.dir;
+            //     motor2.state = MotorState::run;
+            // }
             if(abs(motor2.duty) >= MAXIMUM_DUTY)
             {
                 motor2.duty = MAXIMUM_DUTY * motor2.dir;
@@ -187,19 +187,19 @@ class PidController
         {
             if(motor1.dir_pre != MOTOR_BACKWARD && motor1.dir == MOTOR_BACKWARD)
             {// TODO: check direction for each wheel
-                digitalWrite(motor1.dir_pin, LOW);
+                digitalWrite(motor1.dir_pin, HIGH);
             }
             else if(motor1.dir_pre != MOTOR_FORWARD && motor1.dir == MOTOR_FORWARD)
             {
-                digitalWrite(motor1.dir_pin, HIGH);
+                digitalWrite(motor1.dir_pin, LOW);
             }
             if(motor2.dir_pre != MOTOR_BACKWARD && motor2.dir == MOTOR_BACKWARD)
             {
-                digitalWrite(motor2.dir_pin, HIGH);
+                digitalWrite(motor2.dir_pin, LOW);
             }
             else if(motor2.dir_pre != MOTOR_FORWARD && motor2.dir == MOTOR_FORWARD)
             {
-                digitalWrite(motor2.dir_pin, LOW);
+                digitalWrite(motor2.dir_pin, HIGH);
             }
             motor1.dir_pre = motor1.dir;
             motor2.dir_pre = motor2.dir;
