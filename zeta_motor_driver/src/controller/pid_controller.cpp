@@ -75,8 +75,8 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     motor2.vel_cmd < 0.0 ? (motor2.dir = MOTOR_BACKWARD) : (motor2.dir = MOTOR_FORWARD);
     pid_motor1.InitError();
     pid_motor2.InitError();
-    motor1.duty = 0;
-    motor2.duty = 0;
+    // motor1.duty = 0;
+    // motor2.duty = 0;
 }
 
 void PidController::GetVelocity(float dest[])
