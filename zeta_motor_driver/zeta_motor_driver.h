@@ -1,6 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_H_
 #define ZETA_MOTOR_DRIVER_H_
-#define FW_VERSION "0.2.13"
+#define FW_VERSION "0.2.14"
 
 #include "src/configuration/pin_configuration.h"
 #include "src/serial_helper/serial_helper.h"
