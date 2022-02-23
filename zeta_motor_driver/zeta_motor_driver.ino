@@ -54,14 +54,14 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
     static uint32_t time_pre[NUM_TASK];
     if((time_cur - time_pre[task_control_motor]) > (1000 / CONTROL_FREQUENCY))
     {
-       if(nh.connected())
-       {
-           controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
-       }
-       else
-       {
-           controller.SetMotorSpeed(0,0, false);
-       }
+        if(nh.connected())
+        {
+            controller.SetMotorSpeed(serial_helper.motor1_state.vel_cmd,serial_helper.motor2_state.vel_cmd, serial_helper.IsBrake());
+        }
+        else
+        {
+            controller.SetMotorSpeed(0,0, false);
+        }
         cnt++;
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
@@ -75,7 +75,7 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
     time_cur = millis();
     if((time_cur - time_pre[task_transmit_velocity]) > (1000 / VEL_TRANSMIT_FREQUENCY))
     {
-        TransmitVelocity();
+        if(nh.connected()) TransmitVelocity();
         time_pre[task_transmit_velocity] = time_cur;
     }
     time_cur = millis();
@@ -107,7 +107,7 @@ inline __attribute__((always_inline)) void ExecuteCommand()
     if(serial_helper.ExecuteCommand())
     {
         serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
-        serial_output_publisher.publish(&serial_output_msg);
+        if(nh.connected()) serial_output_publisher.publish(&serial_output_msg);
     }
 }
 

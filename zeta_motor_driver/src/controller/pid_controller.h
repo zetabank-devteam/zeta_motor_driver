@@ -4,18 +4,19 @@
 #include <stdint.h>
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
-// #define MINIMUM_DUTY  80  // actual minimum speed(0.06m/s)
-#define MINIMUM_DUTY            0
-#define MAXIMUM_DUTY            1000 // caution! carefully change this value for preventing overdrive of motor driver
-#define MAXIMUM_VELOCITY        0.320f
-#define MINIMUM_VELOCITY        0.016f
-#define VERY_SMALL_FLOAT        0.001f // epsilon
-#define MIN_VELOCITY_ERROR      0.002f
-#define PWM_FREQUENCY           20000UL // upper than hearing range
-#define MOTOR_FORWARD           1
-#define MOTOR_BACKWARD          -1
-#define MOTOR_NEUTRAL           0
+#define MAXIMUM_DUTY               1000 // caution! carefully change this value for preventing overdrive of motor driver
+#define STOP_DUTY                  100
+#define MAXIMUM_VELOCITY           0.320f
+#define MINIMUM_VELOCITY           0.016f
+#define VERY_SMALL_FLOAT           0.001f // epsilon
+#define DUTY_FADING_POSITIVE_TICK  5
+#define DUTY_FADING_NEGATIVE_TICK  -5
+#define PWM_FREQUENCY              20000UL // upper than hearing range
+#define MOTOR_FORWARD              1
+#define MOTOR_BACKWARD             -1
+#define MOTOR_NEUTRAL              0
 // #define ENABLE_FLOAT_SENSING // uncomment it for activating wheel drop sensing
+#define WHEEL_DROP                0
 #define WHEEL_FLOATING_THRESHOLD  5
 
 #define MOT1_TIMER  Timer3
@@ -137,11 +138,6 @@ class PidController
             pid_motor2.err_derv = (pid_motor2.err - pid_motor2.err_pre) / sampling_time;
             pid_motor2.err_int  = pid_motor2.err_int_pre +  pid_motor2.err * sampling_time;
             motor2.duty         += round(pid_motor2.err * pid_motor2.kp + pid_motor2.err_int * pid_motor2.ki + pid_motor2.err_derv * pid_motor2.kd);
-            // if(motor1.duty * motor1.dir <= MINIMUM_DUTY && motor1.duty * motor1.dir > 0) // 0 < duty < MIN or -MIN < duty < 0
-            // {
-            //     motor1.duty = MINIMUM_DUTY * motor1.dir;
-            //     motor1.state = MotorState::run;
-            // }
             if(abs(motor1.duty) >= MAXIMUM_DUTY)
             {
                 motor1.duty = MAXIMUM_DUTY * motor1.dir;
@@ -149,11 +145,6 @@ class PidController
                 motor1.state = MotorState::run;
             }
             if(motor1.duty * motor1.dir < 0) motor1.dir *= -1; // if reverse disturbance
-            // if(motor2.duty * motor2.dir <= MINIMUM_DUTY && motor2.duty * motor2.dir > 0) 
-            // {
-            //     motor2.duty = MINIMUM_DUTY * motor2.dir;
-            //     motor2.state = MotorState::run;
-            // }
             if(abs(motor2.duty) >= MAXIMUM_DUTY)
             {
                 motor2.duty = MAXIMUM_DUTY * motor2.dir;
@@ -163,12 +154,18 @@ class PidController
             if(motor2.duty * motor2.dir < 0) motor2.dir *= -1;
             /* Run */
             ChangeDir();
+            if(motor1.state == MotorState::stop) motor1.duty = STOP_DUTY * motor1.dir;
+            if(motor2.state == MotorState::stop) motor2.duty = STOP_DUTY * motor2.dir;
+            // char tempstr[32];
+            // sprintf("%d %d",motor1.duty, motor2.duty);
+            // nh.loginfo(tempstr);
+
             MOT1_TIMER.pwm(motor1.pwm_pin,abs(motor1.duty));
             MOT2_TIMER.pwm(motor2.pwm_pin,abs(motor2.duty));
-            if(motor1.duty > 1) motor1.duty--;
-            else if(motor1.duty < -1) motor1.duty++;
-            if(motor2.duty > 1) motor2.duty--;
-            else if(motor2.duty < -1) motor2.duty++;
+            if(motor1.duty >= DUTY_FADING_POSITIVE_TICK) motor1.duty -= DUTY_FADING_POSITIVE_TICK;
+            else if(motor1.duty <= DUTY_FADING_NEGATIVE_TICK) motor1.duty -= DUTY_FADING_NEGATIVE_TICK;
+            if(motor2.duty >= DUTY_FADING_POSITIVE_TICK) motor2.duty -= DUTY_FADING_POSITIVE_TICK;
+            else if(motor2.duty <= DUTY_FADING_NEGATIVE_TICK) motor2.duty -= DUTY_FADING_NEGATIVE_TICK;
             pid_motor1.err_int_pre = pid_motor1.err_int;
             pid_motor2.err_int_pre = pid_motor2.err_int;
         }
@@ -186,20 +183,24 @@ class PidController
         inline __attribute__((always_inline)) void  ChangeDir()
         {
             if(motor1.dir_pre != MOTOR_BACKWARD && motor1.dir == MOTOR_BACKWARD)
-            {// TODO: check direction for each wheel
+            {
                 digitalWrite(motor1.dir_pin, HIGH);
+                motor1.duty = STOP_DUTY * motor1.dir; // ignore current state when change dir
             }
             else if(motor1.dir_pre != MOTOR_FORWARD && motor1.dir == MOTOR_FORWARD)
             {
                 digitalWrite(motor1.dir_pin, LOW);
+                motor1.duty = STOP_DUTY * motor1.dir;
             }
             if(motor2.dir_pre != MOTOR_BACKWARD && motor2.dir == MOTOR_BACKWARD)
             {
                 digitalWrite(motor2.dir_pin, LOW);
+                motor2.duty = STOP_DUTY * motor2.dir;
             }
             else if(motor2.dir_pre != MOTOR_FORWARD && motor2.dir == MOTOR_FORWARD)
             {
                 digitalWrite(motor2.dir_pin, HIGH);
+                motor2.duty = STOP_DUTY * motor2.dir;
             }
             motor1.dir_pre = motor1.dir;
             motor2.dir_pre = motor2.dir;
@@ -208,7 +209,7 @@ class PidController
         inline __attribute__((always_inline)) void CheckWheelFloating()
         {
             static int count;
-            if(digitalRead(motor1.float_pin) || digitalRead(motor2.float_pin))
+            if(digitalRead(motor1.float_pin) == WHEEL_DROP || digitalRead(motor2.float_pin) == WHEEL_DROP)
             {
                 if(count < WHEEL_FLOATING_THRESHOLD) count++;
             }
@@ -235,14 +236,14 @@ class PidController
             {
                 return -1.0f * MAXIMUM_VELOCITY;
             }
-            else if(__builtin_expect(speed_ < MINIMUM_VELOCITY && speed_ > VERY_SMALL_FLOAT, 0))
-            {
-                return MINIMUM_VELOCITY;
-            }
-            else if(__builtin_expect(speed_ < -1.0f * VERY_SMALL_FLOAT && speed_ > -1.0f * MINIMUM_VELOCITY, 0))
-            {
-                return -1.0f * MINIMUM_VELOCITY;
-            }
+            // else if(__builtin_expect(speed_ < MINIMUM_VELOCITY && speed_ > VERY_SMALL_FLOAT, 0))
+            // {
+            //     return MINIMUM_VELOCITY;
+            // }
+            // else if(__builtin_expect(speed_ < -1.0f * VERY_SMALL_FLOAT && speed_ > -1.0f * MINIMUM_VELOCITY, 0))
+            // {
+            //     return -1.0f * MINIMUM_VELOCITY;
+            // }
             else
             {
                 return speed_;
