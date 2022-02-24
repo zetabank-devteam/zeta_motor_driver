@@ -32,16 +32,16 @@ void InitDriver()
     controller.Begin(motor1, motor2, pid_param);
     pinMode(motor1.encoder.encoder_pin,INPUT_PULLUP);
     pinMode(motor2.encoder.encoder_pin,INPUT_PULLUP);   
-    attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin), read_encoder1, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin), read_encoder2, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin), read_encoder1_wrapper, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin), read_encoder2_wrapper, CHANGE);
 }
 
-void read_encoder1()
+void read_encoder1_wrapper()
 {
     controller.read_encoder1();
 }
 
-void read_encoder2()
+void read_encoder2_wrapper()
 {
     controller.read_encoder2();
 }
