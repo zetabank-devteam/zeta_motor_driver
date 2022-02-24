@@ -79,8 +79,6 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     else motor2.state = MotorState::ready;
     motor1.vel_cmd < 0.0 ? (motor1.dir = MOTOR_BACKWARD) : (motor1.dir = MOTOR_FORWARD);
     motor2.vel_cmd < 0.0 ? (motor2.dir = MOTOR_BACKWARD) : (motor2.dir = MOTOR_FORWARD);
-    motor1.duty = motor1.vel_cmd * 2500 * motor1.dir; // output estimation according to linialized model(w/o load)
-    motor2.duty = motor2.vel_cmd * 2500 * motor2.dir;
     pid_motor1.InitError();
     pid_motor2.InitError();
 }
