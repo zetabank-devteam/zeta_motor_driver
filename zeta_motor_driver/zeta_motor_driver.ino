@@ -1,6 +1,7 @@
 #include "zeta_motor_driver.h"
 
 void setup() {
+    pinMode(MT_COM_IND,OUTPUT);
     InitDriver();
     InitROS();
     millis();
@@ -48,7 +49,6 @@ void read_encoder2_wrapper()
 
 inline __attribute__((always_inline)) void RunPeriodicEvent()
 {
-    static int cnt;
     static unsigned long last_control_motor, last_transmit_data, last_execute_command;
     unsigned long time_cur = millis();
     static uint32_t time_pre[NUM_TASK];
@@ -62,7 +62,6 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
         {
             controller.SetMotorSpeed(0,0, false);
         }
-        cnt++;
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }
@@ -84,7 +83,12 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
         if(nh.connected()) fw_version_publisher.publish(&fw_version_msg);
         time_pre[task_publish_version] = time_cur;
     }
-    nh.spinOnce();
+    time_cur = millis();
+    if((time_cur - time_pre[task_blink_led]) > (1000 / BLINK_LED_FREQUENCY))
+    {
+        BlinkLED();
+        time_pre[task_blink_led] = time_cur;
+    }
 }
 
 inline __attribute__((always_inline)) void TransmitVelocity()
@@ -111,9 +115,15 @@ inline __attribute__((always_inline)) void ExecuteCommand()
     }
 }
 
+inline __attribute__((always_inline))void BlinkLED()
+{
+    digitalWrite(MT_COM_IND,!digitalRead(MT_COM_IND));
+}
+
 void loop()
 {
     RunPeriodicEvent();
+    nh.spinOnce();
 }
 
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)

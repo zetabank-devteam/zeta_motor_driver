@@ -14,8 +14,9 @@
 #define CONTROL_FREQUENCY          30
 #define COMMAND_EXECUTE_FREQUENCY  50
 #define VERSION_PUBLISH_FREQUENCY  0.1
+#define BLINK_LED_FREQUENCY        1
 #define MA_FILTER_SIZE             15
-#define NUM_TASK                   5
+#define NUM_TASK                   8
 
 #define CONTROL_STREAM  Serial
 
@@ -42,6 +43,7 @@ enum task_name
     task_execute_command,
     task_transmit_velocity,
     task_publish_version,
+    task_blink_led,
 };
 
 ros::NodeHandle nh;
