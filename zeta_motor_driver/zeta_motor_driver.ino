@@ -1,7 +1,7 @@
 #include "zeta_motor_driver.h"
 
 void setup() {
-    Serial1.begin(115200);
+    pinMode(MT_COM_IND,OUTPUT);
     InitDriver();
     InitROS();
     millis();
@@ -26,21 +26,23 @@ void InitDriver()
     pid_param.kp = serial_helper.GetPGain();
     pid_param.ki = serial_helper.GetIGain();
     pid_param.kd = serial_helper.GetDGain();
-    motor1.encoder.encoder_pin = MOT1_ENCODER_PIN;
-    motor2.encoder.encoder_pin = MOT2_ENCODER_PIN;
+    motor1.encoder.encoder_pin = MOTR_ENCODER_PIN;
+    motor2.encoder.encoder_pin = MOTL_ENCODER_PIN;
     controller.SetPPR(serial_helper.GetPPR());
     controller.SetWheelRadius(serial_helper.GetWheelRadius());
     controller.Begin(motor1, motor2, pid_param);
-    attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin), read_encoder1, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin), read_encoder2, CHANGE);
+    pinMode(motor1.encoder.encoder_pin,INPUT_PULLUP);
+    pinMode(motor2.encoder.encoder_pin,INPUT_PULLUP);   
+    attachInterrupt(digitalPinToInterrupt(motor1.encoder.encoder_pin), read_encoder1_wrapper, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(motor2.encoder.encoder_pin), read_encoder2_wrapper, CHANGE);
 }
 
-void read_encoder1()
+void read_encoder1_wrapper()
 {
     controller.read_encoder1();
 }
 
-void read_encoder2()
+void read_encoder2_wrapper()
 {
     controller.read_encoder2();
 }
@@ -60,7 +62,6 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
         {
             controller.SetMotorSpeed(0,0, false);
         }
-        
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
     }
@@ -73,7 +74,7 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
     time_cur = millis();
     if((time_cur - time_pre[task_transmit_velocity]) > (1000 / VEL_TRANSMIT_FREQUENCY))
     {
-        TransmitVelocity();
+        if(nh.connected()) TransmitVelocity();
         time_pre[task_transmit_velocity] = time_cur;
     }
     time_cur = millis();
@@ -82,7 +83,12 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
         if(nh.connected()) fw_version_publisher.publish(&fw_version_msg);
         time_pre[task_publish_version] = time_cur;
     }
-    nh.spinOnce();
+    time_cur = millis();
+    if((time_cur - time_pre[task_blink_led]) > (1000 / BLINK_LED_FREQUENCY))
+    {
+        BlinkLED();
+        time_pre[task_blink_led] = time_cur;
+    }
 }
 
 inline __attribute__((always_inline)) void TransmitVelocity()
@@ -105,13 +111,19 @@ inline __attribute__((always_inline)) void ExecuteCommand()
     if(serial_helper.ExecuteCommand())
     {
         serial_helper.GetMessage(serial_output_msg.data, &serial_output_msg.data_length);
-        serial_output_publisher.publish(&serial_output_msg);
+        if(nh.connected()) serial_output_publisher.publish(&serial_output_msg);
     }
+}
+
+inline __attribute__((always_inline))void BlinkLED()
+{
+    digitalWrite(MT_COM_IND,!digitalRead(MT_COM_IND));
 }
 
 void loop()
 {
     RunPeriodicEvent();
+    nh.spinOnce();
 }
 
 void SerialInputCallback(const std_msgs::UInt8MultiArray msg)

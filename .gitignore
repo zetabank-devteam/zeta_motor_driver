@@ -1,2 +1,2 @@
-.vscode/
-/src/pre_define.h
+*.json
+pre_define.h

@@ -1,6 +1,6 @@
 #ifndef ZETA_MOTOR_DRIVER_H_
 #define ZETA_MOTOR_DRIVER_H_
-#define FW_VERSION "0.2.12"
+#define FW_VERSION "0.3.0"
 
 #include "src/configuration/pin_configuration.h"
 #include "src/serial_helper/serial_helper.h"
@@ -14,24 +14,25 @@
 #define CONTROL_FREQUENCY          30
 #define COMMAND_EXECUTE_FREQUENCY  50
 #define VERSION_PUBLISH_FREQUENCY  0.1
+#define BLINK_LED_FREQUENCY        1
 #define MA_FILTER_SIZE             15
-#define NUM_TASK                   5
+#define NUM_TASK                   8
 
 #define CONTROL_STREAM  Serial
 
 zeta_motor_driver::PidController::motor_t motor1
 {
-    .pwm_pin   = MOT1_PWM_PIN,
-    .cw_pin    = MOT1_CW_PIN,
-    .ccw_pin   = MOT1_CCW_PIN,
-    .float_pin = MOT1_PRESS_PIN,
+    .pwm_pin   = MOTR_PWM_PIN,
+    .dir_pin   = MOTR_DIR_PIN,
+    .start_pin = MOTR_START_PIN,
+    .float_pin = MOTR_PRESS_PIN,
 };
 zeta_motor_driver::PidController::motor_t motor2
 {
-    .pwm_pin   = MOT2_PWM_PIN,
-    .cw_pin    = MOT2_CW_PIN,
-    .ccw_pin   = MOT2_CCW_PIN,
-    .float_pin = MOT2_PRESS_PIN,
+    .pwm_pin   = MOTL_PWM_PIN,
+    .dir_pin   = MOTL_DIR_PIN,
+    .start_pin = MOTL_START_PIN,
+    .float_pin = MOTL_PRESS_PIN,
 };
 zeta_motor_driver::PidController::pid_t pid_param;
 zeta_motor_driver::PidController        controller;
@@ -42,6 +43,7 @@ enum task_name
     task_execute_command,
     task_transmit_velocity,
     task_publish_version,
+    task_blink_led,
 };
 
 ros::NodeHandle nh;

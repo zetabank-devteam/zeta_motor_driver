@@ -3,7 +3,6 @@
 #include "configuration_helper/configuration_helper.h"
 
 #include <HardwareSerial.h>
-#define DEBUG_PORT  Serial1
 // #define SERIAL_DEBUG
 #define SERIAL_SPEED            115200 // if too slow, print take too long (print() disables interrupt!)
 #define TX_BUFFER_SIZE          16
