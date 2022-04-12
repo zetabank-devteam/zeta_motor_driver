@@ -244,6 +244,7 @@ void ConfigurationHelper::SetFactoryValue()
     SetDGain(0.0f);
     SetMaxSpeed(0.160f);
     SetMinSpeed(0.06f);
+    /*TODO: change default ppr(pulse per rotation) to xiaomi vacuum wheel ppr */
     SetPPR(508.8f);
     SetWheelRadius(0.035f);
     SetWheelSeperation(0.240f);
