@@ -89,12 +89,12 @@
 #define PIN_PJ7 85
 #define MOTR_DIR_PIN      PIN_PG5       
 #define MOTR_PRESS_PIN    PIN_PH3
-#define MOTR_START_PIN    PIN_PK2
+#define MOTR_BK_PIN       PIN_PK2
 #define MOTR_PWM_PIN      PIN_PE4 // S_EXT_PWM_IN
 #define MOTR_ENCODER_PIN  PIN_PD3
 #define MOTL_DIR_PIN      PIN_PH5
 #define MOTL_PRESS_PIN    PIN_PB4
-#define MOTL_START_PIN    PIN_PK3
+#define MOTL_BK_PIN       PIN_PK3
 #define MOTL_PWM_PIN      PIN_PB5
 #define MOTL_ENCODER_PIN  PIN_PD1
 #define MT_COM_IND        PIN_PB7
