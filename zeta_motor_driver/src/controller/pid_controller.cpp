@@ -33,8 +33,8 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 
 void PidController::BrakeMotor()
 {
-    // digitalWrite(motor1.start_pin, HIGH); // LOW = run
-    // digitalWrite(motor2.start_pin, HIGH);
+    digitalWrite(motor1.start_pin, HIGH); // LOW = run
+    digitalWrite(motor2.start_pin, HIGH);
     motor1.dir *= -1;
     motor2.dir *= -1;
     ChangeDir();
@@ -85,8 +85,8 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     pid_motor2.InitError();
     /* TODO: if need xiaomi wheel brake function, remove below block and add manual reset function
         Below block reset wheel brake all times*/
-    // digitalWrite(motor1.start_pin, HIGH);   // init brake
-    // digitalWrite(motor2.start_pin, HIGH);
+    digitalWrite(motor1.start_pin, HIGH);   // init brake
+    digitalWrite(motor2.start_pin, HIGH);
     digitalWrite(motor1.start_pin, LOW);    // release block
     digitalWrite(motor2.start_pin, LOW);
 }
