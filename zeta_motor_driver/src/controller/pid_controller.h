@@ -51,7 +51,7 @@ class PidController
         {
             uint8_t    pwm_pin;
             uint8_t    dir_pin;
-            uint8_t    brake_pin;
+            uint8_t    start_pin;
             uint8_t    float_pin;
             int        dir;
             int        dir_pre;

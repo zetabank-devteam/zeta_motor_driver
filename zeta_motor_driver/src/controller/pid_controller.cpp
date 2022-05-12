@@ -10,20 +10,20 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
     memcpy(&pid_motor2,&pid_param,sizeof(pid_t));
     pinMode(motor1.pwm_pin,   OUTPUT);
     pinMode(motor1.dir_pin,   OUTPUT);
-    pinMode(motor1.brake_pin, OUTPUT);
+    pinMode(motor1.start_pin, OUTPUT);
     pinMode(motor1.float_pin, INPUT_PULLUP);
     pinMode(motor1.encoder.encoder_pin, INPUT_PULLUP);
     pinMode(motor2.pwm_pin,   OUTPUT);
     pinMode(motor2.dir_pin,   OUTPUT);
-    pinMode(motor2.brake_pin, OUTPUT);
+    pinMode(motor2.start_pin, OUTPUT);
     pinMode(motor2.float_pin, INPUT_PULLUP);
     pinMode(motor2.encoder.encoder_pin, INPUT_PULLUP);
     MOT1_TIMER.initialize(1000000/PWM_FREQUENCY);
     MOT2_TIMER.initialize(1000000/PWM_FREQUENCY);
     MOT1_TIMER.pwm(motor1.pwm_pin,STOP_DUTY);
     MOT2_TIMER.pwm(motor2.pwm_pin,STOP_DUTY);
-    digitalWrite(motor1.brake_pin, LOW); // LOW = run
-    digitalWrite(motor2.brake_pin, LOW);
+    digitalWrite(motor1.start_pin, LOW); // LOW = run
+    digitalWrite(motor2.start_pin, LOW);
     braking_time = 10;
     motor1.Init();
     motor2.Init();
@@ -33,8 +33,8 @@ void PidController::Begin(motor_t motor1_, motor_t motor2_, pid_t pid_param)
 
 void PidController::BrakeMotor()
 {
-    digitalWrite(motor1.brake_pin, HIGH); // LOW = run
-    digitalWrite(motor2.brake_pin, HIGH);
+    // digitalWrite(motor1.start_pin, HIGH); // LOW = run
+    // digitalWrite(motor2.start_pin, HIGH);
     motor1.dir *= -1;
     motor2.dir *= -1;
     ChangeDir();
@@ -85,10 +85,10 @@ void PidController::SetMotorSpeed(float speed_motor1_, float speed_motor2_, bool
     pid_motor2.InitError();
     /* TODO: if need xiaomi wheel brake function, remove below block and add manual reset function
         Below block reset wheel brake all times*/
-    digitalWrite(motor1.brake_pin, HIGH);   // init brake
-    digitalWrite(motor2.brake_pin, HIGH);
-    digitalWrite(motor1.brake_pin, LOW);    // release block
-    digitalWrite(motor2.brake_pin, LOW);
+    // digitalWrite(motor1.start_pin, HIGH);   // init brake
+    // digitalWrite(motor2.start_pin, HIGH);
+    digitalWrite(motor1.start_pin, LOW);    // release block
+    digitalWrite(motor2.start_pin, LOW);
 }
 
 void PidController::GetVelocity(float dest[])
