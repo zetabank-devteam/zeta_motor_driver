@@ -5,7 +5,7 @@
 #include "../include/Timer3/TimerThree.h"
 #include "../include/TimerOne/TimerOne.h"
 #define MAXIMUM_DUTY               1000 // caution! carefully change this value for preventing overdrive of motor driver
-#define STOP_DUTY                  100
+#define STOP_DUTY                  30
 #define MAXIMUM_VELOCITY           0.320f
 #define MINIMUM_VELOCITY           0.016f
 #define VERY_SMALL_FLOAT           0.001f // epsilon
