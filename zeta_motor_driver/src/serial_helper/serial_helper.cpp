@@ -274,7 +274,7 @@ void SerialHelper::SetVelocityMessage()
         ConfigurationHelper::FloatToBytes(&(two_bytes[POS_BYTE_HIGH]), &(two_bytes[POS_BYTE_LOW]), velocity_linear, DIGIT_VEL_LINEAR);
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_HIGH];
         transmit_message[transmit_index++] = two_bytes[POS_BYTE_LOW];
-        if(velocity_diff >= 0.0f)
+        if(velocity_diff >= 0.0f && motor2_state.vel_cur * motor1_state.vel_cur >= 0.0f)
         {
             transmit_message[transmit_index++] = ROTATION_FORWARD;
         }

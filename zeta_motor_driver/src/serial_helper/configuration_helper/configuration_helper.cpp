@@ -244,7 +244,7 @@ void ConfigurationHelper::SetFactoryValue()
     SetDGain(0.0f);
     SetMaxSpeed(0.160f);
     SetMinSpeed(0.06f);
-    SetPPR(508.8f);
+    SetPPR(2420.0f);
     SetWheelRadius(0.035f);
     SetWheelSeperation(0.240f);
     SetIncreasingTime(100);

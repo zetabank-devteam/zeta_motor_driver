@@ -51,7 +51,7 @@ class PidController
         {
             uint8_t    pwm_pin;
             uint8_t    dir_pin;
-            uint8_t    start_pin;
+            uint8_t    brake_pin;
             uint8_t    float_pin;
             int        dir;
             int        dir_pre;
@@ -184,22 +184,22 @@ class PidController
         {
             if(motor1.dir_pre != MOTOR_BACKWARD && motor1.dir == MOTOR_BACKWARD)
             {
-                digitalWrite(motor1.dir_pin, HIGH);
+                digitalWrite(motor1.dir_pin, LOW);
                 motor1.duty = STOP_DUTY * motor1.dir; // ignore current state when change dir
             }
             else if(motor1.dir_pre != MOTOR_FORWARD && motor1.dir == MOTOR_FORWARD)
             {
-                digitalWrite(motor1.dir_pin, LOW);
+                digitalWrite(motor1.dir_pin, HIGH);
                 motor1.duty = STOP_DUTY * motor1.dir;
             }
             if(motor2.dir_pre != MOTOR_BACKWARD && motor2.dir == MOTOR_BACKWARD)
             {
-                digitalWrite(motor2.dir_pin, LOW);
+                digitalWrite(motor2.dir_pin, HIGH);
                 motor2.duty = STOP_DUTY * motor2.dir;
             }
             else if(motor2.dir_pre != MOTOR_FORWARD && motor2.dir == MOTOR_FORWARD)
             {
-                digitalWrite(motor2.dir_pin, HIGH);
+                digitalWrite(motor2.dir_pin, LOW);
                 motor2.duty = STOP_DUTY * motor2.dir;
             }
             motor1.dir_pre = motor1.dir;
