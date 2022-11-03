@@ -24,15 +24,15 @@ zeta_motor_driver::PidController::motor_t motor1
 {
     .pwm_pin   = MOTR_PWM_PIN,
     .dir_pin   = MOTR_DIR_PIN,
-    .start_pin = MOTR_BK_PIN,
-    .float_pin = MOTR_PRESS_PIN,
+    .start_pin = MOTR_PRESS_PIN,
+    .float_pin = PIN_PC2,
 };
 zeta_motor_driver::PidController::motor_t motor2
 {
     .pwm_pin   = MOTL_PWM_PIN,
     .dir_pin   = MOTL_DIR_PIN,
-    .start_pin = MOTL_BK_PIN,
-    .float_pin = MOTL_PRESS_PIN,
+    .start_pin = MOTL_PRESS_PIN,
+    .float_pin = PIN_PC3,
 };
 zeta_motor_driver::PidController::pid_t pid_param;
 zeta_motor_driver::PidController        controller;
