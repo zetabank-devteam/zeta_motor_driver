@@ -242,11 +242,12 @@ void ConfigurationHelper::SetFactoryValue()
     SetPGain(1000.0f);
     SetIGain(100.0f);
     SetDGain(0.0f);
-    SetMaxSpeed(0.160f);
-    SetMinSpeed(0.06f);
+    SetMaxSpeed(0.320f);
+    SetMinSpeed(0.016f);
     SetPPR(2420.0f);
     SetWheelRadius(0.035f);
-    SetWheelSeperation(0.240f);
+    // SetWheelSeperation(0.230f);
+    SetWheelSeperation(0.133f);
     SetIncreasingTime(100);
     SetDecreasingTime(100);
     SetEEPROM(EEPROM_SET_FACTORY_VALUE_ADDRESS, uint8_t(FACTORY_SET_STATE_TRUE));

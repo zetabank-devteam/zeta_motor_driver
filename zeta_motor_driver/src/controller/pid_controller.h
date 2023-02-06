@@ -42,7 +42,7 @@ class PidController
         {
             uint8_t           encoder_pin;
             volatile uint32_t pulse_count;
-            Init()
+            void Init()
             {
                 pulse_count = 0;
             }
@@ -61,7 +61,7 @@ class PidController
             int16_t    duty;
             encoder_t  encoder;
             MotorState state;
-            Init()
+            void Init()
             {
                 vel_cmd = vel_cur = position = 0.0f;
                 dir      = MOTOR_FORWARD;
@@ -81,11 +81,11 @@ class PidController
             float err_derv;
             float err_pre;
             float err_int_pre;
-            Init()
+            void Init()
             {
                 kp = kd = ki = err = err_int = err_derv = err_pre = err_int_pre = 0.0f;
             }
-            InitError()
+            void InitError()
             {
                 err = err_int = err_derv = err_pre = err_int_pre = 0.0f;
             }

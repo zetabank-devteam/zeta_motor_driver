@@ -60,7 +60,7 @@ inline __attribute__((always_inline)) void RunPeriodicEvent()
         }
         else
         {
-            controller.SetMotorSpeed(0,0, false);
+            controller.SetMotorSpeed(0.0,0.0, false);
         }
         controller.ControlVel();
         time_pre[task_control_motor] = time_cur;
